@@ -135,7 +135,7 @@ def WriteOnTable(task):
             else:
                 NOW_TABLE = NOW_TABLE.replace(tBox, text).replace(tLine, SPC)
 
-        for idx in range(sH + 1, eH - 1):
+        for idx in range(sH + 1, eH):
             stime = str(idx)
             if len(stime) == 1:
                 stime = '0' + stime
