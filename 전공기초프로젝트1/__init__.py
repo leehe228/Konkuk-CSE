@@ -5,9 +5,10 @@ from PyQt5.QtWidgets import (QApplication,QWidget, QGridLayout, QLabel, QLineEdi
 from PyQt5.QtGui import (QFontDatabase, QFont)
 import sys
 import subprocess
-import tensorflow as tf
+#import tensorflow as tf
 
-help_text = "명령어는 접두어 '/'와 명령단어를 공백 없이 붙여 사용한다.\n\
+""" TEXT """
+TEXT_HELP = "명령어는 접두어 '/'와 명령단어를 공백 없이 붙여 사용한다.\n\
 이 프로그램에서 사용할 수 있는 명령어는 다음과 같다.\n\
 /도움말 명령어를 이용하면 이와 같이 도움말에 대한 정보를 열람할 수 있다.\n\
 \n\
@@ -59,58 +60,225 @@ _________________________\n\
 \n\
 1. /종료 : 프로그램을 안전하게 종료합니다. 인자는 없다.\n"
 
-todo_header = "\
+BAR = "──────────"
+SPC = "          "
+
+TEXT_TODO_HEADER = "\
 ┌──────────┬──────────┬──────────┬──────────┬─────────────────────┬──────────┬────────────────────────┐\n\
-│  할 일   │ 시작시각 │ 지속시간 │ 종료시각 │        요 일        │   태그   │        서브태그        │\n\
-├──────────┼──────────┼──────────┼──────────┼─────────────────────┼──────────┼────────────────────────┤"
+│  할 일   │ 시작시각 │ 지속시간 │ 종료시각 │        요 일        │   태그   │        서브태그        │"
 
-todo_center = "\
-│          │          │          │          │                     │          │                        │\n\
-├──────────┼──────────┼──────────┼──────────┼─────────────────────┼──────────┼────────────────────────┤"
+TEXT_TODO_CENTER = "\
+├──────────┼──────────┼──────────┼──────────┼─────────────────────┼──────────┼────────────────────────┤\n\
+│$T│$S│$R│$E│$W│$G│$D│"
 
-todo_bottom = "\
-│          │          │          │          │                     │          │                        │\n\
+TEXT_TODO_BOTTOM = "\
 └──────────┴──────────┴──────────┴──────────┴─────────────────────┴──────────┴────────────────────────┘"
 
-table_outline = "\
+TEXT_TABLE = "\
 ┌──────────┬──────────┬──────────┬──────────┬──────────┬──────────┬──────────┬──────────┐\n\
 │          │   MON    │   TUE    │   WED    │   THU    │   FRI    │   SAT    │   SUN    │\n\
 ├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
-│  09:00   │          │          │          │          │          │          │          │\n\
-├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
-│  10:00   │          │          │          │          │          │          │          │\n\
-├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
-│  11:00   │          │          │          │          │          │          │          │\n\
-├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
-│  12:00   │          │          │          │          │          │          │          │\n\
-├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
-│  13:00   │          │          │          │          │          │          │          │\n\
-├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
-│  14:00   │          │          │          │          │          │          │          │\n\
-├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
-│  15:00   │          │          │          │          │          │          │          │\n\
-├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
-│  16:00   │          │          │          │          │          │          │          │\n\
-├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
-│  17:00   │          │          │          │          │          │          │          │\n\
-├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
-│  18:00   │          │          │          │          │          │          │          │\n\
-├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
-│  19:00   │          │          │          │          │          │          │          │\n\
-├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
-│  20:00   │          │          │          │          │          │          │          │\n\
-├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
-│  21:00   │          │          │          │          │          │          │          │\n\
-├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
-│  22:00   │          │          │          │          │          │          │          │\n\
-├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
-│  23:00   │          │          │          │          │          │          │          │\n\
+│  09:00   │$M09│$T09│$W09│$H09│$F09│$S09│$U09│\n\
+├──────────┼&M09┼&T09┼&W09┼&H09┼&F09┼&S09┼&U09┤\n\
+│  10:00   │$M10│$T10│$W10│$H10│$F10│$S10│$U10│\n\
+├──────────┼&M10┼&T10┼&W10┼&H10┼&F10┼&S10┼&U10┤\n\
+│  11:00   │$M11│$T11│$W11│$H11│$F11│$S11│$U11│\n\
+├──────────┼&M11┼&T11┼&W11┼&H11┼&F11┼&S11┼&U11┤\n\
+│  12:00   │$M12│$T12│$W12│$H12│$F12│$S12│$U12│\n\
+├──────────┼&M12┼&T12┼&W12┼&H12┼&F12┼&S12┼&U12┤\n\
+│  13:00   │$M13│$T13│$W13│$H13│$F13│$S13│$U13│\n\
+├──────────┼&M13┼&T13┼&W13┼&H13┼&F13┼&S13┼&U13┤\n\
+│  14:00   │$M14│$T14│$W14│$H14│$F14│$S14│$U14│\n\
+├──────────┼&M14┼&T14┼&W14┼&H14┼&F14┼&S14┼&U14┤\n\
+│  15:00   │$M15│$T15│$W15│$H15│$F15│$S15│$U15│\n\
+├──────────┼&M15┼&T15┼&W15┼&H15┼&F15┼&S15┼&U15┤\n\
+│  16:00   │$M16│$T16│$W16│$H16│$F16│$S16│$U16│\n\
+├──────────┼&M16┼&T16┼&W16┼&H16┼&F16┼&S16┼&U16┤\n\
+│  17:00   │$M17│$T17│$W17│$H17│$F17│$S17│$U17│\n\
+├──────────┼&M17┼&T17┼&W17┼&H17┼&F17┼&S17┼&U17┤\n\
+│  18:00   │$M18│$T18│$W18│$H18│$F18│$S18│$U18│\n\
+├──────────┼&M18┼&T18┼&W18┼&H18┼&F18┼&S18┼&U18┤\n\
+│  19:00   │$M19│$T19│$W19│$H19│$F19│$S19│$U19│\n\
+├──────────┼&M19┼&T19┼&W19┼&H19┼&F19┼&S19┼&U19┤\n\
+│  20:00   │$M20│$T20│$W20│$H20│$F20│$S20│$U20│\n\
+├──────────┼&M20┼&T20┼&W20┼&H20┼&F20┼&S20┼&U20┤\n\
+│  21:00   │$M21│$T21│$W21│$H21│$F21│$S21│$U21│\n\
+├──────────┼&M21┼&T21┼&W21┼&H21┼&F21┼&S21┼&U21┤\n\
+│  22:00   │$M22│$T22│$W22│$H22│$F22│$S22│$U22│\n\
+├──────────┼&M22┼&T22┼&W22┼&H22┼&F22┼&S22┼&U22┤\n\
+│  23:00   │$M23│$T23│$W23│$H23│$F23│$S23│$U23│\n\
 └──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┘"
+
+TODO_NUM = 0
+NOW_TODO = str(TEXT_TODO_HEADER)
+
+NOW_TABLE = str(TEXT_TABLE)
+
+todoList = list()
 
 """
 # 전공기초프로젝트1 시간표 생성 프로그램
+# 3239분반 4조
 """
 
+def WriteOnTodoTable(task):
+    global NOW_TODO, TODO_NUM
+    global TEXT_TODO_CENTER, TEXT_TODO_BOTTOM
+
+    tempTODO = str(TEXT_TODO_CENTER)
+    
+    # 내용
+    text = task[0] + ' '*(10 - GetFixedLen(task[0]))
+    tempTODO = tempTODO.replace("$T", text, 1)
+
+    # 시작시각
+    if task[2] is None:
+        text = "          "
+    else:
+        h, m = str(task[2]), str(task[3])
+        if len(h) == 1:
+            h = '0' + h
+        if len(m) == 1:
+            m = '0' + m
+        text = h + ':' + m +  "     "
+    tempTODO = tempTODO.replace("$S", text)
+
+    # 지속시간
+    if task[4] is None:
+        text = "          "
+    else:
+        h, m = str(task[4]), str(task[5])
+        if len(h) == 1:
+            h = '0' + h
+        if len(m) == 1:
+            m = '0' + m
+        text = h + ':' + m +  "     "
+    tempTODO = tempTODO.replace("$R", text)
+
+    # 종료시각
+    if (task[2] is None) or (task[4] is None):
+        text = "          "
+    else:
+        sH, sM, rH, rM = task[2], task[3], task[4], task[5]
+        m, h = sM + rM, sH + rH
+        if m >= 60:
+            h =+ m % 60
+            m = m // 60
+        h, m = str(h), str(m)
+        if len(h) == 1:
+            h = '0' + h
+        if len(m) == 1:
+            m = '0' + m
+        text = h + ':' + m +  "     "
+    tempTODO = tempTODO.replace("$E", text)
+
+    # 요일
+    if task[6] is None:
+        text = "                     "
+    else:
+        text = ', '.join(task[6])
+        text = text + ' '*(21 - GetFixedLen(text))
+    tempTODO = tempTODO.replace("$W", text)
+
+    # 태그
+    tags = ['강의      ', '과제      ', '일과      ']
+    tempTODO = tempTODO.replace("$G", tags[task[1]])
+
+    # 서브태그
+    if task[7] is None:
+        text = "                        "
+    else:
+        text = task[7] + ' '*(24 - GetFixedLen(task[7]))
+    tempTODO = tempTODO.replace("$D", text)
+
+    NOW_TODO = NOW_TODO + '\n' + tempTODO
+    TODO_NUM += 1
+
+    print(TODO_NUM)
+    
+
+def WriteOnTable(task):
+    global NOW_TABLE
+
+    sH, sM, rH, rM = task[2], task[3], task[4], task[5]
+    eM, eH = sM + rM, sH + rH
+    if eM >= 60:
+        eH =+ eM % 60
+        eM = eM // 60
+    
+    # 30분만 지속하는 경우
+    if rH == 0 and rM == 30:
+        text = task[0] + '─'*(10 - GetFixedLen(task[0]))
+    else:
+        text = task[0] + ' '*(10 - GetFixedLen(task[0]))
+
+    for w in task[6]:
+        ew = ['M', 'T', 'W', 'H', 'F', 'S', 'U']
+        hw = ['월', '화', '수', '목', '금', '토', '일']
+        w = ew[hw.index(w)]
+        stime = str(sH)
+        if len(stime) == 1:
+            stime = '0' + stime
+
+        tBox = '$' + w + stime
+        tLine = '&' + w + stime
+
+        if sM == 30:
+            NOW_TABLE = NOW_TABLE.replace(tBox, BAR).replace(tLine, text)
+        else:
+            if (rH == 1 and rM == 0):
+                NOW_TABLE = NOW_TABLE.replace(tBox, text).replace(tLine, BAR)
+            else:
+                NOW_TABLE = NOW_TABLE.replace(tBox, text).replace(tLine, SPC)
+
+        for idx in range(sH + 1, eH - 1):
+            stime = str(idx)
+            if len(stime) == 1:
+                stime = '0' + stime
+
+            tBox = '$' + w + stime
+            tLine = '&' + w + stime
+            NOW_TABLE = NOW_TABLE.replace(tBox, SPC).replace(tLine, SPC)
+
+        if eM == 30:
+            stime = str(eH)
+            if len(stime) == 1:
+                stime = '0' + stime
+
+            tBox = '$' + w + stime
+            tLine = '&' + w + stime
+            NOW_TABLE = NOW_TABLE.replace(tBox, BAR).replace(tLine, BAR)
+        
+    
+
+def completeTable():
+    week = ['M', 'T', 'W', 'H', 'F', 'S', 'U']
+    global NOW_TABLE
+
+    for w in week:
+        for i in range(9, 24):
+            j = str(i)
+            if len(j) == 1: 
+                j = '0' + j
+            tBox = '$' + w + j
+            tLine = '&' + w + j
+            NOW_TABLE = NOW_TABLE.replace(tBox, SPC).replace(tLine, BAR)
+
+    NOW_TABLE = NOW_TABLE.replace(' ┼', ' ├').replace('┼ ', '┤ ').replace(' ├ ', ' │ ')
+    NOW_TABLE = NOW_TABLE.replace('│─', '├─').replace('─│', '─┤')
+
+
+def completeTodo():
+    global NOW_TODO
+    global TEXT_TODO_BOTTOM
+    NOW_TODO = NOW_TODO + '\n' + TEXT_TODO_BOTTOM
+
+
+def AddTable(task):
+    if (task[2] is not None) and (task[4] is not None) and (task[6] is not None):
+        WriteOnTable(task)
+
+""" App Class """
 class App(QWidget):
 
     def __init__(self):
@@ -118,43 +286,63 @@ class App(QWidget):
         self.initUI()
 
     def initUI(self):
+        # Set Window
         self.setWindowTitle('시간표 생성 프로그램')
         self.resize(960, 720)
 
+        # Set Layout
         grid = QGridLayout()
         self.setLayout(grid)
 
+        # TextBrowser
         self.tb = QTextBrowser()
         self.tb.setAcceptRichText(True)
         self.tb.setOpenExternalLinks(True)
 
+        # LineEdit
         self.opline = QLineEdit()
         self.opline.setPlaceholderText("명령어: ")
         self.opline.editingFinished.connect(self.opEntered)
 
+        # Add Widget
         grid.addWidget(self.tb, 0, 0)
         grid.addWidget(self.opline, 1, 0)
         self.show()
 
+    # Clear Screen 
     def clearScreen(self):
         self.tb.clear()
 
+    # Set Text on TextBrowser
     def setText(self, text):
         self.tb.setText(text)
 
+    # Append Text on TextBrowser
     def appendText(self, text):
         self.tb.append(text)
 
+    # when Enter Pressed
     def opEntered(self):
         opstr = self.opline.text()
         oplist = list(map(str, opstr.split()))
 
         print(oplist)
 
+        global NOW_TODO, todoList
+
+        # 도움말 함수
         if oplist[0] == '/도움말':
-            self.setText(help_text)
+            self.setText(TEXT_HELP)
             self.resetLine()
 
+        elif oplist[0] == '/추가':
+            if len(oplist) == 7:
+                todoList.append([oplist[1], oplist[2], oplist[3], oplist[4], oplist[5], [oplist[6]], oplist[7]])
+                WriteOnTodoTable([oplist[1], oplist[2], oplist[3], oplist[4], oplist[5], [oplist[6]], oplist[7]])
+                # completeTodo()
+                self.setText(NOW_TODO)
+
+        # Exception
         else:
             self.setText('오류: 인식할 수 없는 명령어입니다.')
 
@@ -162,6 +350,20 @@ class App(QWidget):
         self.opline.setText('')
 
 
+
+# 고정폯 글꼴 길이 반환 (한글은 2 나머지 1) 함수
+def GetFixedLen(s):
+    l = 0
+    for _ in s:
+        if (_ == ' ' or _ == ','):
+            l += 1
+        elif (_.encode().isalnum()):
+            l += 1
+        else:
+            l += 2
+    return l
+
+""" package check """
 def pip_install(package):
     installed = False
     try:
@@ -180,13 +382,15 @@ def pip_install(package):
 
 
 if __name__ == '__main__':
+    # package check - tensorflow
     try:
-        import tensorflow as tf
+        # import tensorflow as tf
         print('tensorflow installed')
     except Exception as e:
         print(e)
         pip_install('tensorflow==2.4.1')
     
+    # package check - PyQt5
     try:
         import PyQt5
         print('PyQt5 installed')
@@ -194,13 +398,16 @@ if __name__ == '__main__':
         print(e)
         pip_install('PyQt5')
 
+    # App Instance
     _ = QApplication(sys.argv)
     app = App()
     
+    # Font
     fontDB = QFontDatabase()
     fontDB.addApplicationFont('./D2Coding.ttf')
     _.setFont(QFont('D2Coding'))
 
-    # test
-
+    # exit
     sys.exit(_.exec_())
+
+# EOF
