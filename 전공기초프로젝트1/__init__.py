@@ -121,81 +121,83 @@ todoList = list()
 # 3239분반 4조
 """
 
-def WriteOnTodoTable(task):
+def WriteOnTodoTable(tasks):
     global NOW_TODO, TODO_NUM
     global TEXT_TODO_CENTER, TEXT_TODO_BOTTOM
 
+    NOW_TODO = str(TEXT_TODO_HEADER)
     tempTODO = str(TEXT_TODO_CENTER)
+
+    for task in tasks:
+        
+        # 내용
+        text = task[0] + ' '*(10 - GetFixedLen(task[0]))
+        tempTODO = tempTODO.replace("$T", text, 1)
+
+        # 시작시각
+        if task[2] is None:
+            text = "          "
+        else:
+            h, m = str(task[2]), str(task[3])
+            if len(h) == 1:
+                h = '0' + h
+            if len(m) == 1:
+                m = '0' + m
+            text = h + ':' + m +  "     "
+        tempTODO = tempTODO.replace("$S", text)
+
+        # 지속시간
+        if task[4] is None:
+            text = "          "
+        else:
+            h, m = str(task[4]), str(task[5])
+            if len(h) == 1:
+                h = '0' + h
+            if len(m) == 1:
+                m = '0' + m
+            text = h + ':' + m +  "     "
+        tempTODO = tempTODO.replace("$R", text)
+
+        # 종료시각
+        if (task[2] is None) or (task[4] is None):
+            text = "          "
+        else:
+            sH, sM, rH, rM = task[2], task[3], task[4], task[5]
+            m, h = sM + rM, sH + rH
+            if m >= 60:
+                h =+ m % 60
+                m = m // 60
+            h, m = str(h), str(m)
+            if len(h) == 1:
+                h = '0' + h
+            if len(m) == 1:
+                m = '0' + m
+            text = h + ':' + m +  "     "
+        tempTODO = tempTODO.replace("$E", text)
+
+        # 요일
+        if task[6] is None:
+            text = "                     "
+        else:
+            text = ', '.join(task[6])
+            text = text + ' '*(21 - GetFixedLen(text))
+        tempTODO = tempTODO.replace("$W", text)
+
+        # 태그
+        tags = ['강의      ', '과제      ', '일과      ']
+        tempTODO = tempTODO.replace("$G", tags[task[1]])
+
+        # 서브태그
+        if task[7] is None:
+            text = "                        "
+        else:
+            text = task[7] + ' '*(24 - GetFixedLen(task[7]))
+        tempTODO = tempTODO.replace("$D", text)
+
+        NOW_TODO = NOW_TODO + '\n' + tempTODO
     
-    # 내용
-    text = task[0] + ' '*(10 - GetFixedLen(task[0]))
-    tempTODO = tempTODO.replace("$T", text, 1)
+    completeTodo()
 
-    # 시작시각
-    if task[2] is None:
-        text = "          "
-    else:
-        h, m = str(task[2]), str(task[3])
-        if len(h) == 1:
-            h = '0' + h
-        if len(m) == 1:
-            m = '0' + m
-        text = h + ':' + m +  "     "
-    tempTODO = tempTODO.replace("$S", text)
-
-    # 지속시간
-    if task[4] is None:
-        text = "          "
-    else:
-        h, m = str(task[4]), str(task[5])
-        if len(h) == 1:
-            h = '0' + h
-        if len(m) == 1:
-            m = '0' + m
-        text = h + ':' + m +  "     "
-    tempTODO = tempTODO.replace("$R", text)
-
-    # 종료시각
-    if (task[2] is None) or (task[4] is None):
-        text = "          "
-    else:
-        sH, sM, rH, rM = task[2], task[3], task[4], task[5]
-        m, h = sM + rM, sH + rH
-        if m >= 60:
-            h =+ m % 60
-            m = m // 60
-        h, m = str(h), str(m)
-        if len(h) == 1:
-            h = '0' + h
-        if len(m) == 1:
-            m = '0' + m
-        text = h + ':' + m +  "     "
-    tempTODO = tempTODO.replace("$E", text)
-
-    # 요일
-    if task[6] is None:
-        text = "                     "
-    else:
-        text = ', '.join(task[6])
-        text = text + ' '*(21 - GetFixedLen(text))
-    tempTODO = tempTODO.replace("$W", text)
-
-    # 태그
-    tags = ['강의      ', '과제      ', '일과      ']
-    tempTODO = tempTODO.replace("$G", tags[task[1]])
-
-    # 서브태그
-    if task[7] is None:
-        text = "                        "
-    else:
-        text = task[7] + ' '*(24 - GetFixedLen(task[7]))
-    tempTODO = tempTODO.replace("$D", text)
-
-    NOW_TODO = NOW_TODO + '\n' + tempTODO
-    TODO_NUM += 1
-
-    print(TODO_NUM)
-    
 
 def WriteOnTable(task):
     global NOW_TABLE
@@ -278,6 +280,10 @@ def AddTable(task):
     if (task[2] is not None) and (task[4] is not None) and (task[6] is not None):
         WriteOnTable(task)
 
+def initTEXT():
+    global NOW_DOTO, TEXT_TODO_HEADER
+    NOW_TODO = str(TEXT_TODO_HEADER)
+
 """ App Class """
 class App(QWidget):
 
@@ -315,6 +321,7 @@ class App(QWidget):
 
     # Set Text on TextBrowser
     def setText(self, text):
+        self.tb.clear()
         self.tb.setText(text)
 
     # Append Text on TextBrowser
@@ -336,15 +343,15 @@ class App(QWidget):
             self.resetLine()
 
         elif oplist[0] == '/추가':
-            if len(oplist) == 7:
-                todoList.append([oplist[1], oplist[2], oplist[3], oplist[4], oplist[5], [oplist[6]], oplist[7]])
-                WriteOnTodoTable([oplist[1], oplist[2], oplist[3], oplist[4], oplist[5], [oplist[6]], oplist[7]])
-                # completeTodo()
-                self.setText(NOW_TODO)
+            todoList.append([oplist[1], int(oplist[2]), int(oplist[3]), int(oplist[4]), int(oplist[5]), int(oplist[6]), [oplist[7]], oplist[8]])
+
+            WriteOnTodoTable(todoList)
+            self.setText(NOW_TODO)
 
         # Exception
         else:
             self.setText('오류: 인식할 수 없는 명령어입니다.')
+        print("END")
 
     def resetLine(self):
         self.opline.setText('')
