@@ -2,7 +2,7 @@
 
 import PyQt5
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QGridLayout, QLabel, QLineEdit, QTextBrowser)
+    QApplication, QWidget, QGridLayout, QLabel, QLineEdit, QTextBrowser, QMessageBox)
 from PyQt5.QtGui import (QFontDatabase, QFont)
 import sys
 import subprocess
@@ -24,6 +24,8 @@ todoList = list()
 """
 
 # todo 테이블에 할 일을 작성하는 함수
+
+
 def WriteOnTodoTable(tasks):
     global NOW_TODO
     global TEXT_TODO_CENTER, TEXT_TODO_BOTTOM
@@ -227,6 +229,10 @@ class App(QWidget):
         grid.addWidget(self.opline, 1, 0)
         self.show()
 
+    def closeEvent(self, event):
+        # TODO 닫을 때 다이얼로그 구현
+        pass
+
     # Clear Screen
     def clearScreen(self):
         self.tb.clear()
@@ -248,54 +254,113 @@ class App(QWidget):
         opstr = self.opline.text()
         oplist = list(map(str, opstr.split()))
 
+        # ========== 예외 ===========
         if opstr is None or opstr == '':
             return
-        
-        # 메뉴 페이지
+
+        # # ========== 메뉴 페이지 ===========
         if PAGE == 1:
             pass
+
+        # ========== 생성 페이지 ===========
         elif PAGE == 2:
+            # ========== 도움말 ===========
             if oplist[0] == '/도움말':
+                self.resetLine()
                 self.setText(TEXT_HELP)
+
+            # ========== 추가 ===========
+            elif oplist[0] == '/추가':
                 self.resetLine()
 
-            elif oplist[0] == '/추가':
-                todoList.append([oplist[1], int(oplist[2]), int(oplist[3]), 
-                    int(oplist[4]), int(oplist[5]), int(oplist[6]), [oplist[7]], oplist[8]])
+                # TODO
+                todoList.append([oplist[1], int(oplist[2]), int(oplist[3]),
+                                 int(oplist[4]), int(oplist[5]), int(oplist[6]), [oplist[7]], oplist[8]])
                 WriteOnTodoTable(todoList)
                 self.setText(NOW_TODO)
 
+            # ========== 뒤로가기 ===========
             elif oplist[0] == '//':
+                # TODO
                 pass
 
+            # ========== 입력완료 ===========
             elif oplist[0] == '/입력완료':
+                self.resetLine()
+
                 AddTable(todoList)
                 completeTable()
                 self.setText(NOW_TABLE)
 
+            # ========== 수정 ===========
             elif oplist[0] == '/수정':
+                self.resetLine()
+
                 pass
 
+            # ========== 삭제 ===========
             elif oplist[0] == '/삭제':
-                pass
+                self.resetLine()
+                    
+                if len(todoList) == 0:
+                    infoText = '오류: 삭제할 할 일이 없습니다.\n\n'
 
+                elif len(oplist) == 1:
+                    reply = QMessageBox.question(self, '경고', '할 일을 전부 삭제하시겠습니까?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                    deleteFlag = (reply == QMessageBox.Yes)
+                    if deleteFlag:
+                        todoList = list()
+                        infoText = '할 일을 전부 삭제했습니다.\n\n'
+                    else:
+                        infoText = ''
+
+                elif GetFixedLen(oplist[1]) > 10:
+                    infoText = '오류: 검색어의 고정폭 길이는 10을 초과할 수 없습니다.\n\n'
+
+                else:
+                    todo = ''
+                    for i in range(1, len(oplist), 1):
+                        todo += oplist[i] + ' '
+                    todo = todo.strip()
+
+                    found = False
+                    i = 0
+                    while(i < len(todoList)):
+                        if(todoList[i][0] == todo):
+                            del todoList[i]
+                            found = True
+                        else:
+                            i += 1
+
+                    if(found == True):
+                        infoText = todo + '을(를) 모두 삭제하였습니다.\n\n'
+                    elif(found == False):
+                        infoText = '경고: 일치하는 할 일이 없습니다. 데이터를 삭제하지 않았습니다.\n\n'
+
+                WriteOnTodoTable(todoList)
+                self.setText(infoText + NOW_TODO)
+
+            # ========== 검색 ===========
             elif oplist[0] == '/검색':
+                self.resetLine()
+
                 pass
 
+            # ========== 종료 ===========
             elif oplist[0] == '/종료':
+                self.resetLine()
+
                 pass
 
-            # Exception
+            # ========== 예외 ===========
             else:
                 self.setText('오류: 인식할 수 없는 명령어입니다.')
 
         self.resetLine()
         oplist = None
 
-
     def resetLine(self):
         self.opline.clear()
-
 
     def printMenu():
         self.setText(TEXT_MENU)
