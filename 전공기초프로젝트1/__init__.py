@@ -1,7 +1,8 @@
 #-*-coding:utf-8-*-
 
 import PyQt5
-from PyQt5.QtWidgets import (QApplication, QWidget, QGridLayout, QLabel, QLineEdit, QTextBrowser)
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QGridLayout, QLabel, QLineEdit, QTextBrowser)
 from PyQt5.QtGui import (QFontDatabase, QFont)
 import sys
 import subprocess
@@ -9,7 +10,7 @@ import subprocess
 
 from text_datas import TEXT_HELP, BAR, SPC, TEXT_TODO_HEADER, TEXT_TODO_CENTER, TEXT_TODO_BOTTOM, TEXT_TABLE, TEXT_MENU
 
-THIS_PAGE = 1
+PAGE = 2
 
 NOW_TODO = str(TEXT_TODO_HEADER)
 
@@ -22,13 +23,16 @@ todoList = list()
 # 3239분반 4조
 """
 
+# todo 테이블에 할 일을 작성하는 함수
 def WriteOnTodoTable(tasks):
     global NOW_TODO
     global TEXT_TODO_CENTER, TEXT_TODO_BOTTOM
 
+    # 초기화
     NOW_TODO = str(TEXT_TODO_HEADER)
     tempTODO = str(TEXT_TODO_CENTER)
 
+    # 리스트 내 반복
     for task in tasks:
         tempTODO = str(TEXT_TODO_CENTER)
 
@@ -99,16 +103,18 @@ def WriteOnTodoTable(tasks):
         NOW_TODO = NOW_TODO + '\n' + tempTODO
 
     completeTodo()
+# End
 
 
+# 시간표 테이블에 할 일을 추가하는 함수
 def WriteOnTable(task):
     global NOW_TABLE
 
     sH, sM, rH, rM = task[2], task[3], task[4], task[5]
     eM, eH = sM + rM, sH + rH
     if eM >= 60:
-        eH = + eM % 60
-        eM = eM // 60
+        eH = eH + (eM // 60)
+        eM = eM % 60
 
     # 30분만 지속하는 경우
     if rH == 0 and rM == 30:
@@ -135,7 +141,7 @@ def WriteOnTable(task):
             else:
                 NOW_TABLE = NOW_TABLE.replace(tBox, text).replace(tLine, SPC)
 
-        for idx in range(sH + 1, eH):
+        for idx in range(sH + 1, eH - 1):
             stime = str(idx)
             if len(stime) == 1:
                 stime = '0' + stime
@@ -153,10 +159,17 @@ def WriteOnTable(task):
             tLine = '&' + w + stime
             NOW_TABLE = NOW_TABLE.replace(tBox, BAR).replace(tLine, BAR)
 
+            stime = str(eH - 1)
+            if len(stime) == 1:
+                stime = '0' + stime
+
+            tLine = '&' + w + stime
+            NOW_TABLE = NOW_TABLE.replace(tLine, SPC)
+
 
 def completeTable():
-    week = ['M', 'T', 'W', 'H', 'F', 'S', 'U']
     global NOW_TABLE
+    week = ['M', 'T', 'W', 'H', 'F', 'S', 'U']
 
     for w in week:
         for i in range(9, 24):
@@ -235,48 +248,54 @@ class App(QWidget):
         opstr = self.opline.text()
         oplist = list(map(str, opstr.split()))
 
-        # 도움말 함수
-        if oplist is None:
+        if opstr is None or opstr == '':
+            return
+        
+        # 메뉴 페이지
+        if PAGE == 1:
             pass
-        elif oplist[0] == '/도움말':
-            self.setText(TEXT_HELP)
-            self.resetLine()
+        elif PAGE == 2:
+            if oplist[0] == '/도움말':
+                self.setText(TEXT_HELP)
+                self.resetLine()
 
-        elif oplist[0] == '/추가':
-            todoList.append([oplist[1], int(oplist[2]), int(oplist[3]), int(oplist[4]), int(oplist[5]), int(oplist[6]), [oplist[7]], oplist[8]])
-            WriteOnTodoTable(todoList)
-            self.setText(NOW_TODO)
+            elif oplist[0] == '/추가':
+                todoList.append([oplist[1], int(oplist[2]), int(oplist[3]), 
+                    int(oplist[4]), int(oplist[5]), int(oplist[6]), [oplist[7]], oplist[8]])
+                WriteOnTodoTable(todoList)
+                self.setText(NOW_TODO)
 
-        elif oplist[0] == '//':
-            pass
+            elif oplist[0] == '//':
+                pass
 
-        elif oplist[0] == '/입력완료':
-            AddTable(todoList)
-            completeTable()
-            self.setText(NOW_TABLE)
+            elif oplist[0] == '/입력완료':
+                AddTable(todoList)
+                completeTable()
+                self.setText(NOW_TABLE)
 
-        elif oplist[0] == '/수정':
-            pass
+            elif oplist[0] == '/수정':
+                pass
 
-        elif oplist[0] == '/삭제':
-            pass
+            elif oplist[0] == '/삭제':
+                pass
 
-        elif oplist[0] == '/검색':
-            pass
+            elif oplist[0] == '/검색':
+                pass
 
-        elif oplist[0] == '/종료':
-            pass
+            elif oplist[0] == '/종료':
+                pass
 
-        # Exception
-        else:
-            self.setText('오류: 인식할 수 없는 명령어입니다.')
+            # Exception
+            else:
+                self.setText('오류: 인식할 수 없는 명령어입니다.')
 
-        self.opline.clear()
+        self.resetLine()
         oplist = None
 
 
     def resetLine(self):
         self.opline.clear()
+
 
     def printMenu():
         self.setText(TEXT_MENU)
