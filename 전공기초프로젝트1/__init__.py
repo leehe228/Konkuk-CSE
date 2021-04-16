@@ -1,33 +1,283 @@
 #-*-coding:utf-8-*-
 
 import PyQt5
-from PyQt5.QtWidgets import (
-    QApplication, QWidget, QGridLayout, QLabel, QLineEdit, QTextBrowser, QMessageBox)
+from PyQt5.QtWidgets import (QApplication, QWidget, QGridLayout, QLabel, QLineEdit, QTextBrowser, QMessageBox)
 from PyQt5.QtGui import (QFontDatabase, QFont)
+
 import sys
 import subprocess
-#import tensorflow as tf
+import numpy as np
+from random import (randrange, random, choice)
+import tensorflow as tf
 
-from text_datas import TEXT_HELP, BAR, SPC, TEXT_TODO_HEADER, TEXT_TODO_CENTER, TEXT_TODO_BOTTOM, TEXT_TABLE, TEXT_MENU
-
-PAGE = 1
-
-NOW_TODO = str(TEXT_TODO_HEADER)
-
-NOW_TABLE = str(TEXT_TABLE)
-
-todoList = list()
-
-user_save_check = None
+# from dnn import (Model_Time, Model_Week)
+# from text_datas import (TEXT_HELP, BAR, SPC, TEXT_TODO_HEADER, TEXT_TODO_CENTER, TEXT_TODO_BOTTOM, TEXT_TABLE, TEXT_MENU)
 
 """
 # 전공기초프로젝트1 시간표 생성 프로그램
 # 3239분반 4조
 """
 
+# ========== 텍스트 데이터 ===========
+TEXT_HELP = "명령어는 접두어 '/'와 명령단어를 공백 없이 붙여 사용한다.\n\
+이 프로그램에서 사용할 수 있는 명령어는 다음과 같다.\n\
+/도움말 명령어를 이용하면 이와 같이 도움말에 대한 정보를 열람할 수 있다.\n\
+\n\
+_________________________\n\
+\n\
+*시간표 명령어\n\
+\n\
+1. /이동 : 다음 목록의 페이지로 이동할 수 있다. 인자로 페이지 이름을 입력한다.\n\
+페이지 목록 : 1) 메뉴페이지 2) 생성페이지 3) 결과페이지\n\
+\n\
+2. /입력완료 : 할 일을 모두 입력한 후 시간표를 생성하기 위해 사용한다. 인자는 없다.\n\
+\n\
+3. /저장 : 시간표와 할 일 데이터를 파일로 저장한다. 인자는 없다.\n\
+\n\
+4. /불러오기 : 시간표 혹은 할 일 데이터 파일을 열어 내용을 확인한다. 인자는 없다.\n\
+\n\
+_________________________\n\
+\n\
+*할 일 명령어\n\
+\n\
+1. /추가 : 할 일 데이터를 추가한다.\n\
+필수로 입력하는 인자로 내용, 필수태그가 포함되어야 한다. \n\
+내용은 접두, 접미어가 없고, 명령어 바로 뒤에 공백을 두고 입력되어야 한다. 필수 태그는 접두어로 샵(#)을 사용한다.\n\
+선택 인자로 시작시각과 지속시간, 요일을 고정하거나, 서브 태그를 포함할 수 있다.\n\
+시작시각, 지속시간, 요일은 모두 중괄호로 감싼다. 서브 태그는 접두어로 대시(-)를 사용한다. 서브 태그는 인자 중 가장 마지막에 입력되어야 한다.\n\
+*예시 : /추가 친구만나기 #일과\n\
+*예시 : /추가 물리문제 {금요일 수요일 13시} #과제 -p213부터 p238\n\
+\n\
+2. /검색 : 할 일을 검색한다. 인자로는 검색할 내용, 서브 태그 내용, 필수 태그 내용을 입력한다.\n\
+인자로 검색어와 검색 조건을 입력한다. 접두어로는 대시(-)를 사용하며 몇 글자 이상 일치할 경우 출력할지 정수를 입력한다.\n\
+검색할 내용은 명령어 바로 뒤에 공백을 두고 입력되어야 한다.\n\
+*예시 : /검색 확통과제\n\
+*예시 : /검색 미적분 과제 71 -3\n\
+-> \"미적분과제71\" 텍스트 집합에서 3글자 이상 포함하는 결과를 출력한다.\n\
+\n\
+3. /수정 : 할 일을 수정한다. 인자로는 접두어 -와 수정할 구성요소 지칭어와 함께 올바른 접두, 접미어를 붙인 수정할 내용을 입력한다.\n\
+*예시 : /수정 수학과제 -요일 {월요일}\n\
+-> 요일의 경우 접두, 접미어로 중괄호를 사용하므로 중괄호를 사용한다.\n\
+*예시 : /수정 영어과제 -태그 #일과\n\
+-> 태그(필수 태그)의 경우 접두어로 샵(#)을 사용하므로 샵(#)을 사용한다.\n\
+\n\
+4. /삭제 : 할 일을 삭제한다. 인자로는 삭제할 할 일의 내용을 정확하게 입력한다.\n\
+*예시 : /삭제 \"미적분수강\"\n\
+-> 할 일의 내용이 정확히 일치해야 한다.\n\
+\n\
+_________________________\n\
+\n\
+*기타 명령어\n\
+\n\
+1. /종료 : 프로그램을 안전하게 종료합니다. 인자는 없다.\n"
+
+BAR = "──────────"
+SPC = "          "
+
+TEXT_TODO_HEADER = "\
+┌──────────┬──────────┬──────────┬──────────┬─────────────────────┬──────────┬────────────────────────┐\n\
+│  할 일   │ 시작시각 │ 지속시간 │ 종료시각 │       요  일        │   태그   │        서브태그        │"
+
+TEXT_TODO_CENTER = "\
+├──────────┼──────────┼──────────┼──────────┼─────────────────────┼──────────┼────────────────────────┤\n\
+│$T│$S│$R│$E│$W│$G│$D│"
+
+TEXT_TODO_BOTTOM = "\
+└──────────┴──────────┴──────────┴──────────┴─────────────────────┴──────────┴────────────────────────┘"
+
+TEXT_TABLE = "\
+┌──────────┬──────────┬──────────┬──────────┬──────────┬──────────┬──────────┬──────────┐\n\
+│          │   MON    │   TUE    │   WED    │   THU    │   FRI    │   SAT    │   SUN    │\n\
+├──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n\
+│  09:00   │$M09│$T09│$W09│$H09│$F09│$S09│$U09│\n\
+├──────────┼&M09┼&T09┼&W09┼&H09┼&F09┼&S09┼&U09┤\n\
+│  10:00   │$M10│$T10│$W10│$H10│$F10│$S10│$U10│\n\
+├──────────┼&M10┼&T10┼&W10┼&H10┼&F10┼&S10┼&U10┤\n\
+│  11:00   │$M11│$T11│$W11│$H11│$F11│$S11│$U11│\n\
+├──────────┼&M11┼&T11┼&W11┼&H11┼&F11┼&S11┼&U11┤\n\
+│  12:00   │$M12│$T12│$W12│$H12│$F12│$S12│$U12│\n\
+├──────────┼&M12┼&T12┼&W12┼&H12┼&F12┼&S12┼&U12┤\n\
+│  13:00   │$M13│$T13│$W13│$H13│$F13│$S13│$U13│\n\
+├──────────┼&M13┼&T13┼&W13┼&H13┼&F13┼&S13┼&U13┤\n\
+│  14:00   │$M14│$T14│$W14│$H14│$F14│$S14│$U14│\n\
+├──────────┼&M14┼&T14┼&W14┼&H14┼&F14┼&S14┼&U14┤\n\
+│  15:00   │$M15│$T15│$W15│$H15│$F15│$S15│$U15│\n\
+├──────────┼&M15┼&T15┼&W15┼&H15┼&F15┼&S15┼&U15┤\n\
+│  16:00   │$M16│$T16│$W16│$H16│$F16│$S16│$U16│\n\
+├──────────┼&M16┼&T16┼&W16┼&H16┼&F16┼&S16┼&U16┤\n\
+│  17:00   │$M17│$T17│$W17│$H17│$F17│$S17│$U17│\n\
+├──────────┼&M17┼&T17┼&W17┼&H17┼&F17┼&S17┼&U17┤\n\
+│  18:00   │$M18│$T18│$W18│$H18│$F18│$S18│$U18│\n\
+├──────────┼&M18┼&T18┼&W18┼&H18┼&F18┼&S18┼&U18┤\n\
+│  19:00   │$M19│$T19│$W19│$H19│$F19│$S19│$U19│\n\
+├──────────┼&M19┼&T19┼&W19┼&H19┼&F19┼&S19┼&U19┤\n\
+│  20:00   │$M20│$T20│$W20│$H20│$F20│$S20│$U20│\n\
+├──────────┼&M20┼&T20┼&W20┼&H20┼&F20┼&S20┼&U20┤\n\
+│  21:00   │$M21│$T21│$W21│$H21│$F21│$S21│$U21│\n\
+├──────────┼&M21┼&T21┼&W21┼&H21┼&F21┼&S21┼&U21┤\n\
+│  22:00   │$M22│$T22│$W22│$H22│$F22│$S22│$U22│\n\
+├──────────┼&M22┼&T22┼&W22┼&H22┼&F22┼&S22┼&U22┤\n\
+│  23:00   │$M23│$T23│$W23│$H23│$F23│$S23│$U23│\n\
+└──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┘"
+
+TEXT_MENU = "\
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────┐\n\
+│                                                                                                     │\n\
+│                                         시간표 생성 프로그램                                        │\n\
+│                                                                                                     │\n\
+│                             - 건국대학교 전공기초프로젝트1 3239분반 4조 -                           │\n\
+├─────────────────────────────────────────────────────────────────────────────────────────────────────┤\n\
+│                                                                                                     │\n\
+│                                     ┌───────────────────────────┐                                   │\n\
+│                                     │                           │                                   │\n\
+│                                     │      1. 생 성 하 기       │                                   │\n\
+│                                     │      2. 불 러 오 기       │                                   │\n\
+│                                     │      3. 저 장 하 기       │                                   │\n\
+│                                     │      4. 종 료 하 기       │                                   │\n\
+│                                     │                           │                                   │\n\
+│                                     └───────────────────────────┘                                   │\n\
+│                                                                                                     │\n\
+└─────────────────────────────────────────────────────────────────────────────────────────────────────┘"
+
+
+# ========== 시간 예측 모델 ===========
+class Model_Time(object):
+
+    def __init__(self):
+        self.X = tf.placeholder(tf.float32, shape=[None, 3])
+        self.Y = tf.placeholder(tf.float32, shape=[None, 15])
+
+        self.W1 = tf.Variable(tf.random_uniform([3, 15], -1., 1.))
+        self.b1 = tf.Variable(tf.zeros([15]))
+        self.L1 = tf.nn.relu(tf.add(tf.matmul(self.X, self.W1), self.b1))
+
+        self.W2 = tf.Variable(tf.random_normal([15, 30]))
+        self.b2 = tf.Variable(tf.zeros([30]))
+        self.L2 = tf.nn.relu(tf.add(tf.matmul(self.L1, self.W2), self.b2))
+
+        self.W3 = tf.Variable(tf.random_normal([30, 60]))
+        self.b3 = tf.Variable(tf.zeros([60]))
+        self.L3 = tf.nn.relu(tf.add(tf.matmul(self.L2, self.W3), self.b3))
+
+        self.W4 = tf.Variable(tf.random_normal([60, 40]))
+        self.b4 = tf.Variable(tf.zeros([40]))
+        self.L4 = tf.nn.relu(tf.add(tf.matmul(self.L3, self.W4), self.b4))
+
+        self.W5 = tf.Variable(tf.random_normal([40, 30]))
+        self.b5 = tf.Variable(tf.zeros([30]))
+        self.L5 = tf.nn.relu(tf.add(tf.matmul(self.L4, self.W5), self.b5))
+
+        self.W6 = tf.Variable(tf.random_normal([30, 15]))
+        self.b6 = tf.Variable(tf.zeros([15]))
+        self.model = tf.add(tf.matmul(self.L5, self.W6), self.b6)
+
+        self.cost = tf.reduce_mean(
+            tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.Y, logits=self.model))
+        
+        self.optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
+        self.train_op = self.optimizer.minimize(self.cost)
+
+
+    def TRAIN(self, x_data, y_data, iter):
+        init = tf.global_variables_initializer()
+        self.sess = tf.Session()
+        self.sess.run(init)
+    
+        for step in range(iter):
+            self.sess.run(self.train_op, feed_dict={self.X: x_data, self.Y: y_data})   
+    
+
+    def PREDICT(self, x_data, y_data, p_data):
+        self.TRAIN(x_data, y_data, 100)
+        self.prediction = tf.argmax(self.model, 1)
+        return self.sess.run(self.prediction, feed_dict={self.X: p_data})
+        
+        # is_correct = tf.equal(prediction, target)
+        # accuracy = tf.reduce_mean(tf.cast(is_correct, tf.float32))
+        # print('정확도: %.2f' % sess.run(accuracy * 100, feed_dict={X: x_data, Y: y_data}))
+        self.sess.close()
+
+
+# ========== 요일 예측 모델 ===========
+class Model_Week(object):
+
+    def __init__(self):
+        self.X = tf.placeholder(tf.float32, shape=[None, 3])
+        self.Y = tf.placeholder(tf.float32, shape=[None, 7])
+
+        self.W1 = tf.Variable(tf.random_uniform([3, 15], -1., 1.))
+        self.b1 = tf.Variable(tf.zeros([15]))
+        self.L1 = tf.nn.relu(tf.add(tf.matmul(self.X, self.W1), self.b1))
+
+        self.W2 = tf.Variable(tf.random_normal([15, 30]))
+        self.b2 = tf.Variable(tf.zeros([30]))
+        self.L2 = tf.nn.relu(tf.add(tf.matmul(self.L1, self.W2), self.b2))
+
+        self.W3 = tf.Variable(tf.random_normal([30, 60]))
+        self.b3 = tf.Variable(tf.zeros([60]))
+        self.L3 = tf.nn.relu(tf.add(tf.matmul(self.L2, self.W3), self.b3))
+
+        self.W4 = tf.Variable(tf.random_normal([60, 40]))
+        self.b4 = tf.Variable(tf.zeros([40]))
+        self.L4 = tf.nn.relu(tf.add(tf.matmul(self.L3, self.W4), self.b4))
+
+        self.W5 = tf.Variable(tf.random_normal([40, 15]))
+        self.b5 = tf.Variable(tf.zeros([15]))
+        self.L5 = tf.nn.relu(tf.add(tf.matmul(self.L4, self.W5), self.b5))
+
+        self.W6 = tf.Variable(tf.random_normal([15, 7]))
+        self.b6 = tf.Variable(tf.zeros([7]))
+        self.model = tf.add(tf.matmul(self.L5, self.W6), self.b6)
+
+        self.cost = tf.reduce_mean(
+            tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.Y, logits=self.model))
+        
+        self.optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
+        self.train_op = self.optimizer.minimize(self.cost)
+
+
+    def TRAIN(self, x_data, y_data, iter):
+        init = tf.global_variables_initializer()
+        self.sess = tf.Session()
+        self.sess.run(init)
+    
+        for step in range(iter):
+            self.sess.run(self.train_op, feed_dict={self.X: x_data, self.Y: y_data})   
+    
+
+    def PREDICT(self, x_data, y_data, p_data):
+        self.TRAIN(x_data, y_data, 100)
+        self.prediction = tf.argmax(self.model, 1)
+        return self.sess.run(self.prediction, feed_dict={self.X: p_data})
+        
+        # is_correct = tf.equal(prediction, target)
+        # accuracy = tf.reduce_mean(tf.cast(is_correct, tf.float32))
+        # print('정확도: %.2f' % sess.run(accuracy * 100, feed_dict={X: x_data, Y: y_data}))
+        self.sess.close()
+
+
+PAGE = 1 # 현재 페이지 (1 : 메인메뉴  / 2: 생성 페이지)
+
+NOW_TODO = str(TEXT_TODO_HEADER) # 현재 할 일 테이블 텍스트
+NOW_TABLE = str(TEXT_TABLE) # 현재 시간표 테이블 텍스트
+
+# 할 일 리스트
+todoList = list()
+# 학습용 경험 집합
+EXP_SET = list()
+
+# 유저가 마지막으로 수정 후 저장 여부
+user_save_check = None
+
+# 학습용 모델
+model_time = Model_Time()
+model_week = Model_Week()
+
+# epsilon
+epsilon = 0.8
+
+
 # todo 테이블에 할 일을 작성하는 함수
-
-
 def WriteOnTodoTable(tasks):
     global NOW_TODO
     global TEXT_TODO_CENTER, TEXT_TODO_BOTTOM
@@ -94,7 +344,7 @@ def WriteOnTodoTable(tasks):
         tempTODO = tempTODO.replace("$W", text)
 
         # 태그
-        tags = ['강의      ', '과제      ', '일과      ']
+        tags = ['#강의     ', '#과제     ', '#일과     ']
         tempTODO = tempTODO.replace("$G", tags[task[1]])
 
         # 서브태그
@@ -171,6 +421,7 @@ def WriteOnTable(task):
             NOW_TABLE = NOW_TABLE.replace(tLine, SPC)
 
 
+# ========== 시간표 생성 마무리 ===========
 def completeTable():
     global NOW_TABLE
     week = ['M', 'T', 'W', 'H', 'F', 'S', 'U']
@@ -189,16 +440,92 @@ def completeTable():
     NOW_TABLE = NOW_TABLE.replace('│─', '├─').replace('─│', '─┤')
 
 
+# ========== 할 일 테이블 생성 마무리 ===========
 def completeTodo():
     global NOW_TODO
     global TEXT_TODO_BOTTOM
     NOW_TODO = NOW_TODO + '\n' + TEXT_TODO_BOTTOM
 
 
+# ========== 시간표에 대상 추가 ===========
 def AddTable(tasks):
+
+    global model_time, model_week, epsilon, NOW_TABLE, TEXT_TABLE
+
+    NOW_TABLE = TEXT_TABLE
+
+    # [0]  / [1]  / [2]    [3]    / [4]     [5]    / [6]   / [7]
+    # 내용 / 태그  / 시작시 시작분  / 지속시  지속분  / 요일  / 서브태그    
     for task in tasks:
+        
+        # 지속 시각 예측이 필요한 경우
+        if (task[4] is None):
+            task[4] = randrange(1, 3)
+            task[5] = choice([0, 30])
+
+        # 지속 시간 이외 고정인 경우
+        if (task[2] is None) or (task[6] is None):
+            # 태그 -> One Hot Enc
+            tempTag = [0, 0, 0]
+            tempTag[task[1]] = 1
+            p_data = np.array([tempTag])
+
+            if len(EXP_SET) == 0:
+                x_data = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+                y_time_data = np.array([[0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]])
+                y_week_data = np.array([[0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0]])
+            else:
+                l_tag = list()
+                l_time = list()
+                l_week = list()
+
+                for exp in EXP_SET:
+                    tempTag = [0, 0, 0]
+                    tempTime = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                    tempWeek = [0, 0, 0, 0, 0, 0, 0]
+                    hw = ['월', '화', '수', '목', '금', '토', '일']
+                    tempTag[exp[1]] = 1
+                    l_tag.append(tempTag)
+                    tempTime[exp[2] - 9] = 1
+                    l_time.append(tempTime)
+                    tempWeek[hw.index(exp[6][0])] = 1
+                    l_week.append(tempWeek)
+
+                x_data = np.array(l_tag)
+                y_time_data = np.array(l_time)
+                y_week_data = np.array(l_week)
+
+            # 시작시각 예측이 필요한 경우
+            if (task[2] is None):
+                if random() < epsilon:
+                    task[2] = int(model_time.PREDICT(x_data, y_time_data, p_data)) + 9
+                    task[3] = choice([0, 30])
+
+                else:
+                    task[2] = randrage(9, 22)
+                    task[3] = choice([0, 30])
+
+            # 요일 예측이 필요한 경우
+            if (task[6] is None):
+                if random() < epsilon:
+                    hw = ['월', '화', '수', '목', '금', '토', '일']
+                    task[6] = list(hw[int(model_week.PREDICT(x_data, y_week_data, p_data))])
+
+                else:
+                    task[6] = list(choice(['월', '화', '수', '목', '금', '토', '일']))
+                
+        print(task)
         if (task[2] is not None) and (task[4] is not None) and (task[6] is not None):
             WriteOnTable(task)
+            EXP_SET.append(task)
+        else:
+            print("알 수 없는 오류가 발생했습니다.")
+
+        epsilon -= 0.0001
+
+    print(EXP_SET)
+
+# END
 
 
 class App(QWidget):
@@ -308,10 +635,23 @@ class App(QWidget):
             # ========== 추가 ===========
             elif oplist[0] == '/추가':
                 self.resetLine()
+                if len(oplist) == 9:
+                    todoList.append([oplist[1], int(oplist[2]), int(oplist[3]), int(oplist[4]), int(oplist[5]), int(oplist[6]), [oplist[7]], oplist[8]])
 
-                # TODO
-                todoList.append([oplist[1], int(oplist[2]), int(oplist[3]),
-                                 int(oplist[4]), int(oplist[5]), int(oplist[6]), [oplist[7]], oplist[8]])
+                user_save_check = True
+                WriteOnTodoTable(todoList)
+                self.setText(NOW_TODO)
+
+            # ========== 테스트 데이터 추가 ===========
+            elif oplist[0] == '/테스트':
+                self.resetLine()
+                todoList.append(['할일1', 0, 9, 30, 0, 30, ['월'], '내용1'])
+                todoList.append(['할일2', 0, 10, 0, 1, 0, ['화'], '내용2'])
+                todoList.append(['할일3', 1, None, None, 1, 0, ['수', '금'], '내용3'])
+                todoList.append(['할일4', 2, 9, 30, 0, 30, None, '내용4'])
+                todoList.append(['할일5', 1, 16, 30, None, None, ['화', '토'], '내용5'])
+                todoList.append(['할일6', 0, None, None, None, None, ['목', '일'], '내용6'])
+                todoList.append(['할일7', 1, None, None, None, None, None, None])
 
                 user_save_check = True
                 WriteOnTodoTable(todoList)
@@ -327,10 +667,13 @@ class App(QWidget):
             # ========== 입력완료 ===========
             elif oplist[0] == '/입력완료':
                 self.resetLine()
-
-                AddTable(todoList)
-                completeTable()
-                self.setText(NOW_TABLE)
+                
+                if len(todoList) == 0:
+                    self.setText('오류: 추가된 할 일이 없어 시간표를 생성할 수 없습니다.')
+                else:
+                    AddTable(todoList)
+                    completeTable()
+                    self.setText(NOW_TABLE)
 
             # ========== 수정 ===========
             elif oplist[0] == '/수정':
@@ -396,9 +739,12 @@ class App(QWidget):
         self.resetLine()
         oplist = None
 
+    # ========== 명령문 입력줄 초기화 ===========
     def resetLine(self):
         self.opline.clear()
 
+
+    # ========== 메뉴 출력 함수 ===========
     def printMenu():
         self.setText(TEXT_MENU)
 
@@ -416,6 +762,7 @@ def GetFixedLen(s):
     return l
 
 
+# ========== 패키지 설치 점검 및 설치 ===========
 def pip_install(package):
     installed = False
     try:
@@ -433,14 +780,15 @@ def pip_install(package):
             print(e)
 
 
+# ========== 메인 ===========
 def main():
 # package check - tensorflow
     try:
-        # import tensorflow as tf
+        import tensorflow as tf
         print('tensorflow installed')
     except Exception as e:
         print(e)
-        pip_install('tensorflow==2.4.1')
+        pip_install('tensorflow==1.15.*')
 
     # package check - PyQt5
     try:
@@ -470,5 +818,5 @@ def main():
 
 if __name__ == '__main__':
     main()
-
+    
 # EOF
