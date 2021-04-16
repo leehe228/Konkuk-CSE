@@ -10,13 +10,15 @@ import subprocess
 
 from text_datas import TEXT_HELP, BAR, SPC, TEXT_TODO_HEADER, TEXT_TODO_CENTER, TEXT_TODO_BOTTOM, TEXT_TABLE, TEXT_MENU
 
-PAGE = 2
+PAGE = 1
 
 NOW_TODO = str(TEXT_TODO_HEADER)
 
 NOW_TABLE = str(TEXT_TABLE)
 
 todoList = list()
+
+user_save_check = None
 
 """
 # 전공기초프로젝트1 시간표 생성 프로그램
@@ -221,7 +223,7 @@ class App(QWidget):
 
         # LineEdit
         self.opline = QLineEdit()
-        self.opline.setPlaceholderText("명령어: ")
+        self.opline.setPlaceholderText("선택 : ")
         self.opline.editingFinished.connect(self.opEntered)
 
         # Add Widget
@@ -231,7 +233,14 @@ class App(QWidget):
 
     def closeEvent(self, event):
         # TODO 닫을 때 다이얼로그 구현
-        pass
+        global user_save_check
+
+        if user_save_check:
+            reply = QMessageBox.question(self, '종료', '저장되지 않은 변경 사항은 삭제됩니다. 종료하시겠습니까?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                event.accept()
+            else:
+                event.ignore()
 
     # Clear Screen
     def clearScreen(self):
@@ -249,7 +258,7 @@ class App(QWidget):
     # when Enter Pressed
     def opEntered(self):
 
-        global NOW_TODO, todoList
+        global NOW_TODO, todoList, PAGE, user_save_check
 
         opstr = self.opline.text()
         oplist = list(map(str, opstr.split()))
@@ -260,7 +269,34 @@ class App(QWidget):
 
         # # ========== 메뉴 페이지 ===========
         if PAGE == 1:
-            pass
+            # 생성하기
+            if oplist[0] == '1':
+                self.resetLine()
+                PAGE = 2
+                self.opline.setPlaceholderText("명령어 : ")
+                WriteOnTodoTable(todoList)
+                self.setText(NOW_TODO)
+
+
+            # 불러오기
+            elif oplist[0] == '2':
+                self.resetLine()
+
+
+            # 저장하기
+            elif oplist[0] == '3':
+                self.resetLine()
+                user_save_check = False
+
+
+            # 종료하기
+            elif oplist[0] == '4':
+                self.resetLine()
+                
+
+            else:
+                self.resetLine()
+                self.setText(TEXT_MENU + '\n\n오류: 올바른 메뉴를 선택하세요.')
 
         # ========== 생성 페이지 ===========
         elif PAGE == 2:
@@ -276,13 +312,17 @@ class App(QWidget):
                 # TODO
                 todoList.append([oplist[1], int(oplist[2]), int(oplist[3]),
                                  int(oplist[4]), int(oplist[5]), int(oplist[6]), [oplist[7]], oplist[8]])
+
+                user_save_check = True
                 WriteOnTodoTable(todoList)
                 self.setText(NOW_TODO)
 
             # ========== 뒤로가기 ===========
             elif oplist[0] == '//':
-                # TODO
-                pass
+                self.opline.setPlaceholderText("선택 : ")
+                self.resetLine()
+                self.setText(TEXT_MENU)
+                PAGE = 1
 
             # ========== 입력완료 ===========
             elif oplist[0] == '/입력완료':
@@ -303,19 +343,20 @@ class App(QWidget):
                 self.resetLine()
                     
                 if len(todoList) == 0:
-                    infoText = '오류: 삭제할 할 일이 없습니다.\n\n'
+                    infoText = '\n\n오류: 추가한 할 일이 없습니다.'
 
                 elif len(oplist) == 1:
                     reply = QMessageBox.question(self, '경고', '할 일을 전부 삭제하시겠습니까?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                     deleteFlag = (reply == QMessageBox.Yes)
                     if deleteFlag:
                         todoList = list()
-                        infoText = '할 일을 전부 삭제했습니다.\n\n'
+                        infoText = '\n\n할 일을 전부 삭제했습니다.'
+                        user_save_check = True
                     else:
                         infoText = ''
 
                 elif GetFixedLen(oplist[1]) > 10:
-                    infoText = '오류: 검색어의 고정폭 길이는 10을 초과할 수 없습니다.\n\n'
+                    infoText = '\n\n오류: 검색어의 고정폭 길이는 10을 초과할 수 없습니다.'
 
                 else:
                     todo = ''
@@ -333,12 +374,13 @@ class App(QWidget):
                             i += 1
 
                     if(found == True):
-                        infoText = todo + '을(를) 모두 삭제하였습니다.\n\n'
+                        infoText = '\n\n\'' + todo + '\'을(를) 모두 삭제하였습니다.'
+                        user_save_check = True
                     elif(found == False):
-                        infoText = '경고: 일치하는 할 일이 없습니다. 데이터를 삭제하지 않았습니다.\n\n'
+                        infoText = '\n\n경고: 일치하는 할 일이 없습니다. 데이터를 삭제하지 않았습니다.'
 
                 WriteOnTodoTable(todoList)
-                self.setText(infoText + NOW_TODO)
+                self.setText(NOW_TODO + infoText)
 
             # ========== 검색 ===========
             elif oplist[0] == '/검색':
@@ -346,15 +388,10 @@ class App(QWidget):
 
                 pass
 
-            # ========== 종료 ===========
-            elif oplist[0] == '/종료':
-                self.resetLine()
-
-                pass
-
             # ========== 예외 ===========
             else:
-                self.setText('오류: 인식할 수 없는 명령어입니다.')
+                completeTable()
+                self.setText(NOW_TABLE + '\n\n오류: 인식할 수 없는 명령어입니다.')
 
         self.resetLine()
         oplist = None
@@ -396,8 +433,8 @@ def pip_install(package):
             print(e)
 
 
-if __name__ == '__main__':
-    # package check - tensorflow
+def main():
+# package check - tensorflow
     try:
         # import tensorflow as tf
         print('tensorflow installed')
@@ -417,6 +454,11 @@ if __name__ == '__main__':
     _ = QApplication(sys.argv)
     app = App()
 
+    global user_save_check
+    user_save_check = False
+
+    app.setText(TEXT_MENU)
+
     # Font
     fontDB = QFontDatabase()
     fontDB.addApplicationFont('./D2Coding.ttf')
@@ -424,5 +466,9 @@ if __name__ == '__main__':
 
     # exit
     sys.exit(_.exec_())
+
+
+if __name__ == '__main__':
+    main()
 
 # EOF
