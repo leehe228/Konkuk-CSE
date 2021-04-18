@@ -144,9 +144,10 @@ TEXT_MENU = "\
 # ========== 시간 예측 모델 ===========
 class Model_Time(object):
 
+    # 딥러닝 네트워크 구축
     def __init__(self):
-        self.X = tf.placeholder(tf.float32, shape=[None, 3])
-        self.Y = tf.placeholder(tf.float32, shape=[None, 15])
+        self.X = tf.placeholder(tf.float32, shape=[None, 3]) # 입력 3 (0 ~ 2)
+        self.Y = tf.placeholder(tf.float32, shape=[None, 15]) # 출력 15 (9 ~ 23)
 
         self.W1 = tf.Variable(tf.random_uniform([3, 15], -1., 1.))
         self.b1 = tf.Variable(tf.zeros([15]))
@@ -172,25 +173,30 @@ class Model_Time(object):
         self.b6 = tf.Variable(tf.zeros([15]))
         self.model = tf.add(tf.matmul(self.L5, self.W6), self.b6)
 
+        # cost 계산
         self.cost = tf.reduce_mean(
             tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.Y, logits=self.model))
         
+        # optimizer
         self.optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
         self.train_op = self.optimizer.minimize(self.cost)
 
 
+    # 학습 함수
     def TRAIN(self, x_data, y_data, iter):
         init = tf.global_variables_initializer()
         self.sess = tf.Session()
         self.sess.run(init)
-    
+        # iter 번 학습 시행
         for step in range(iter):
             self.sess.run(self.train_op, feed_dict={self.X: x_data, self.Y: y_data})   
     
 
+    # 예측 함수
     def PREDICT(self, x_data, y_data, p_data):
-        self.TRAIN(x_data, y_data, 100)
-        self.prediction = tf.argmax(self.model, 1)
+        self.TRAIN(x_data, y_data, 100) # 경험 집합 데이터 100번 학습
+        self.prediction = tf.argmax(self.model, 1) 
+        # 예측 시행
         return self.sess.run(self.prediction, feed_dict={self.X: p_data})
         self.sess.close()
 
@@ -246,10 +252,6 @@ class Model_Week(object):
         self.TRAIN(x_data, y_data, 100)
         self.prediction = tf.argmax(self.model, 1)
         return self.sess.run(self.prediction, feed_dict={self.X: p_data})
-        
-        # is_correct = tf.equal(prediction, target)
-        # accuracy = tf.reduce_mean(tf.cast(is_correct, tf.float32))
-        # print('정확도: %.2f' % sess.run(accuracy * 100, feed_dict={X: x_data, Y: y_data}))
         self.sess.close()
 
 
@@ -272,8 +274,8 @@ op_temp_idx = 1
 user_save_check = None
 
 # 학습용 모델
-model_time = Model_Time()
-model_week = Model_Week()
+model_time = Model_Time() # 시간
+model_week = Model_Week() # 요일
 
 # epsilon
 epsilon = 0.8
@@ -284,7 +286,7 @@ def WriteOnTodoTable(tasks):
     global NOW_TODO
     global TEXT_TODO_CENTER, TEXT_TODO_BOTTOM
 
-    # 초기화
+    # 텍스트 초기화
     NOW_TODO = str(TEXT_TODO_HEADER)
     tempTODO = str(TEXT_TODO_CENTER)
 
@@ -358,6 +360,7 @@ def WriteOnTodoTable(tasks):
 
         NOW_TODO = NOW_TODO + '\n' + tempTODO
 
+    # 텍스트 닫기
     completeTodo()
 # End
 
@@ -378,6 +381,7 @@ def WriteOnTable(task):
     else:
         text = task[0] + ' '*(10 - GetFixedLen(task[0]))
 
+    # 요일 별로 추가해주기
     for w in task[6]:
         ew = ['M', 'T', 'W', 'H', 'F', 'S', 'U']
         hw = ['월', '화', '수', '목', '금', '토', '일']
@@ -421,6 +425,7 @@ def WriteOnTable(task):
 
             tLine = '&' + w + stime
             NOW_TABLE = NOW_TABLE.replace(tLine, SPC)
+# End of DEF WriteOnTable
 
 
 # ========== 시간표 생성 마무리 ===========
@@ -440,6 +445,7 @@ def completeTable():
     NOW_TABLE = NOW_TABLE.replace(' ┼', ' ├').replace(
         '┼ ', '┤ ').replace(' ├ ', ' │ ')
     NOW_TABLE = NOW_TABLE.replace('│─', '├─').replace('─│', '─┤')
+# End of DEF CompleteTable
 
 
 # ========== 할 일 테이블 생성 마무리 ===========
@@ -447,6 +453,7 @@ def completeTodo():
     global NOW_TODO
     global TEXT_TODO_BOTTOM
     NOW_TODO = NOW_TODO + '\n' + TEXT_TODO_BOTTOM
+# End of DEF CompleteTodo
 
 
 # ========== 시간표에 대상 추가 ===========
@@ -474,12 +481,14 @@ def AddTable(tasks):
 
             if len(EXP_SET) == 0:
                 x_data = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-                y_time_data = np.array([[0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]])
-                y_week_data = np.array([[0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0]])
+                y_time_data = np.array([[0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                                        [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], 
+                                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]])
+                y_week_data = np.array([[0, 1, 0, 0, 0, 0, 0], 
+                                        [0, 0, 0, 1, 0, 0, 0], 
+                                        [0, 0, 0, 0, 0, 1, 0]])
             else:
-                l_tag = list()
-                l_time = list()
-                l_week = list()
+                l_tag, l_time, l_week = [], [], []
 
                 for exp in EXP_SET:
                     tempTag = [0, 0, 0]
@@ -502,7 +511,6 @@ def AddTable(tasks):
                 if random() < epsilon:
                     task[2] = int(model_time.PREDICT(x_data, y_time_data, p_data)) + 9
                     task[3] = choice([0, 30])
-
                 else:
                     task[2] = randrange(9, 22)
                     task[3] = choice([0, 30])
@@ -512,7 +520,6 @@ def AddTable(tasks):
                 if random() < epsilon:
                     hw = ['월', '화', '수', '목', '금', '토', '일']
                     task[6] = list(hw[int(model_week.PREDICT(x_data, y_week_data, p_data))])
-
                 else:
                     task[6] = list(choice(['월', '화', '수', '목', '금', '토', '일']))
                 
@@ -521,15 +528,13 @@ def AddTable(tasks):
             WriteOnTable(task)
             EXP_SET.append(task)
         else:
-            print("알 수 없는 오류가 발생했습니다.")
+            print("알 수 없는 오류 발생") # 이 오류가 발생한다면 프로그램 자체에 중대한 오류가 있는 것.
 
-        epsilon -= 0.0001
-
-    print(EXP_SET)
-
-# END
+        epsilon -= 0.0001 # 입실론 조정
+# END of DEF AddTable
 
 
+# ========== PyQt5 GUI 프로그램 클래스 ===========
 class App(QWidget):
 
     def __init__(self):
@@ -562,8 +567,9 @@ class App(QWidget):
         self.show()
 
 
+    # ========== 닫는 이벤트 발생 시 호출 ===========
     def closeEvent(self, event):
-        # TODO 닫을 때 다이얼로그 구현
+        # TODO
         global user_save_check
 
         if user_save_check:
@@ -574,23 +580,23 @@ class App(QWidget):
                 event.ignore()
 
 
-    # Clear Screen
+    # ========== 텍스트 브라우저 초기화 ===========
     def clearScreen(self):
         self.tb.clear()
 
 
-    # Set Text on TextBrowser
+    # ========== 텍스트 브라우저에 텍스트 표시 (리셋) ===========
     def setText(self, text):
         self.tb.clear()
         self.tb.setText(text)
 
 
-    # Append Text on TextBrowser
+    # ========== 텍스트 브라우저에 텍스트 추가 (리셋 X) ===========
     def appendText(self, text):
         self.tb.append(text)
 
 
-    # 명령어 히스토리 저장
+    # ========== 명령어 히스토리 이동 (방향키) ===========
     def keyPressEvent(self, e):
         global op_temp_idx, op_history, op_history_idx
 
@@ -607,7 +613,7 @@ class App(QWidget):
                 self.opline.setText('')
 
 
-    # when Enter Pressed
+    # ========== 엔터키 입력 시 호출 ===========
     def opEntered(self):
 
         global NOW_TODO, todoList, PAGE, user_save_check
@@ -623,9 +629,10 @@ class App(QWidget):
         op_history.append(opstr)
         op_history_idx += 1
         op_temp_idx = op_history_idx + 1
+
         # # ========== 메뉴 페이지 ===========
         if PAGE == 1:
-            # 생성하기
+            # ========== 생성하기 ===========
             if oplist[0] == '1':
                 self.resetLine()
                 PAGE = 2
@@ -634,18 +641,18 @@ class App(QWidget):
                 self.setText(NOW_TODO)
 
 
-            # 불러오기
+            # ========== 불러오기 ===========
             elif oplist[0] == '2':
                 self.resetLine()
 
 
-            # 저장하기
+            # ========== 저장하기 ===========
             elif oplist[0] == '3':
                 self.resetLine()
                 user_save_check = False
 
 
-            # 종료하기
+            # ========== 종료하기 ===========
             elif oplist[0] == '4':
                 self.resetLine()
                 
@@ -653,6 +660,7 @@ class App(QWidget):
             else:
                 self.resetLine()
                 self.setText(TEXT_MENU + '\n\n오류: 올바른 메뉴를 선택하세요.')
+
 
         # ========== 생성 페이지 ===========
         elif PAGE == 2:
@@ -837,7 +845,7 @@ def compressWord(i):
     return s
 
 
-# ========== 패키지 설치 점검 및 설치 ===========
+# ========== 패키지 설치 점검 및 설치 (미사용) ===========
 """def pip_install(package):
     installed = False
     try:
