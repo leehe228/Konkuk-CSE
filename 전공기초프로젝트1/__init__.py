@@ -3,6 +3,7 @@
 import PyQt5
 from PyQt5.QtWidgets import (QApplication, QWidget, QGridLayout, QLabel, QLineEdit, QTextBrowser, QMessageBox)
 from PyQt5.QtGui import (QFontDatabase, QFont)
+from PyQt5.QtCore import Qt
 
 import sys
 import subprocess
@@ -191,10 +192,6 @@ class Model_Time(object):
         self.TRAIN(x_data, y_data, 100)
         self.prediction = tf.argmax(self.model, 1)
         return self.sess.run(self.prediction, feed_dict={self.X: p_data})
-        
-        # is_correct = tf.equal(prediction, target)
-        # accuracy = tf.reduce_mean(tf.cast(is_correct, tf.float32))
-        # print('정확도: %.2f' % sess.run(accuracy * 100, feed_dict={X: x_data, Y: y_data}))
         self.sess.close()
 
 
@@ -265,6 +262,11 @@ NOW_TABLE = str(TEXT_TABLE) # 현재 시간표 테이블 텍스트
 todoList = list()
 # 학습용 경험 집합
 EXP_SET = list()
+
+# 명령어 history
+op_history = list()
+op_history_idx = -1
+op_temp_idx = 1
 
 # 유저가 마지막으로 수정 후 저장 여부
 user_save_check = None
@@ -502,7 +504,7 @@ def AddTable(tasks):
                     task[3] = choice([0, 30])
 
                 else:
-                    task[2] = randrage(9, 22)
+                    task[2] = randrange(9, 22)
                     task[3] = choice([0, 30])
 
             # 요일 예측이 필요한 경우
@@ -534,6 +536,7 @@ class App(QWidget):
         super().__init__()
         self.initUI()
 
+
     def initUI(self):
         # Set Window
         self.setWindowTitle('시간표 생성 프로그램')
@@ -558,6 +561,7 @@ class App(QWidget):
         grid.addWidget(self.opline, 1, 0)
         self.show()
 
+
     def closeEvent(self, event):
         # TODO 닫을 때 다이얼로그 구현
         global user_save_check
@@ -569,23 +573,45 @@ class App(QWidget):
             else:
                 event.ignore()
 
+
     # Clear Screen
     def clearScreen(self):
         self.tb.clear()
+
 
     # Set Text on TextBrowser
     def setText(self, text):
         self.tb.clear()
         self.tb.setText(text)
 
+
     # Append Text on TextBrowser
     def appendText(self, text):
         self.tb.append(text)
+
+
+    # 명령어 히스토리 저장
+    def keyPressEvent(self, e):
+        global op_temp_idx, op_history, op_history_idx
+
+        if e.key() == Qt.Key_Up:
+            if (op_temp_idx > 0):
+                op_temp_idx -= 1
+                self.opline.setText(op_history[op_temp_idx])
+
+        elif e.key() == Qt.Key_Down:
+            if (op_temp_idx < op_history_idx):
+                op_temp_idx += 1
+                self.opline.setText(op_history[op_temp_idx])
+            elif (op_temp_idx == op_history_idx):
+                self.opline.setText('')
+
 
     # when Enter Pressed
     def opEntered(self):
 
         global NOW_TODO, todoList, PAGE, user_save_check
+        global op_history, op_history_idx, op_temp_idx
 
         opstr = self.opline.text()
         oplist = list(map(str, opstr.split()))
@@ -593,7 +619,10 @@ class App(QWidget):
         # ========== 예외 ===========
         if opstr is None or opstr == '':
             return
-
+        
+        op_history.append(opstr)
+        op_history_idx += 1
+        op_temp_idx = op_history_idx + 1
         # # ========== 메뉴 페이지 ===========
         if PAGE == 1:
             # 생성하기
@@ -632,6 +661,7 @@ class App(QWidget):
                 self.resetLine()
                 self.setText(TEXT_HELP)
 
+
             # ========== 추가 ===========
             elif oplist[0] == '/추가':
                 self.resetLine()
@@ -641,6 +671,7 @@ class App(QWidget):
                 user_save_check = True
                 WriteOnTodoTable(todoList)
                 self.setText(NOW_TODO)
+
 
             # ========== 테스트 데이터 추가 ===========
             elif oplist[0] == '/테스트':
@@ -657,12 +688,14 @@ class App(QWidget):
                 WriteOnTodoTable(todoList)
                 self.setText(NOW_TODO)
 
+
             # ========== 뒤로가기 ===========
             elif oplist[0] == '//':
                 self.opline.setPlaceholderText("선택 : ")
                 self.resetLine()
                 self.setText(TEXT_MENU)
                 PAGE = 1
+
 
             # ========== 입력완료 ===========
             elif oplist[0] == '/입력완료':
@@ -675,11 +708,13 @@ class App(QWidget):
                     completeTable()
                     self.setText(NOW_TABLE)
 
+
             # ========== 수정 ===========
             elif oplist[0] == '/수정':
                 self.resetLine()
 
                 pass
+
 
             # ========== 삭제 ===========
             elif oplist[0] == '/삭제':
@@ -725,19 +760,53 @@ class App(QWidget):
                 WriteOnTodoTable(todoList)
                 self.setText(NOW_TODO + infoText)
 
+
             # ========== 검색 ===========
             elif oplist[0] == '/검색':
                 self.resetLine()
+                searchedList = list()
 
-                pass
+                tmpStr = ''.join(oplist)[3:] # '/검색'을 제외하고 공백을 없앤 후 합친 문자열
+                if tmpStr == '': # /검색만 치고 내용을 입력 안 한 케이스
+                    self.setText(NOW_TODO + '\n\n오류: 검색할 내용을 1자 이상 입력하세요.')
+                    return
+                else:
+                    tmpList = tmpStr.split('-') # 리스트에 원소가 2개인지 체크해서 2개가 아니면 에러(하이픈이 2개 이상 들어온거)
+                    if len(tmpList) > 1:               # '-'뒤에 정수를 입력한 경우
+                        searchNum = int(tmpList[1])
+                    else:                              # '-' + 정수를 입력하지 않은 경우
+                        searchNum = 1
+                    
+                    searchString = compressWord(tmpList[0])
+
+                    for todo in todoList:
+                        count = 0
+                        cmpString = compressWord(todo[0]) # 공백과 겹치는 문자를 제거한 '할 일' 문자열
+
+                        for cs in cmpString:
+                            for ss in searchString:  # 한 글자씩 비교해서 searchNum까지 count 증가시키기
+                                if ss==cs:
+                                    count += 1
+                        
+                        if count >= searchNum:       # 겹치는 글자가 기준을 충족한 경우
+                            searchedList.append(todo)
+
+                    if (len(searchedList) == 0):
+                        WriteOnTodoTable(todoList)
+                        self.setText(NOW_TODO + '\n\n검색 결과가 없습니다.')
+                    else:
+                        WriteOnTodoTable(searchedList)
+                        self.setText('검색 결과 : \n\n' + NOW_TODO)
+
 
             # ========== 예외 ===========
             else:
                 completeTable()
-                self.setText(NOW_TABLE + '\n\n오류: 인식할 수 없는 명령어입니다.')
+                self.setText(NOW_TODO + '\n\n오류: 인식할 수 없는 명령어입니다.')
 
         self.resetLine()
         oplist = None
+
 
     # ========== 명령문 입력줄 초기화 ===========
     def resetLine(self):
@@ -762,8 +831,14 @@ def GetFixedLen(s):
     return l
 
 
+# ========== 문자열 압축 함수 ===========
+def compressWord(i):
+    s = ''.join(set(i))
+    return s
+
+
 # ========== 패키지 설치 점검 및 설치 ===========
-def pip_install(package):
+"""def pip_install(package):
     installed = False
     try:
         subprocess.check_call(["pip", "install", package])
@@ -778,12 +853,12 @@ def pip_install(package):
         except Exception as e:
             installed = False
             print(e)
-
+"""
 
 # ========== 메인 ===========
 def main():
 # package check - tensorflow
-    try:
+    """try:
         import tensorflow as tf
         print('tensorflow installed')
     except Exception as e:
@@ -796,7 +871,7 @@ def main():
         print('PyQt5 installed')
     except Exception as e:
         print(e)
-        pip_install('PyQt5')
+        pip_install('PyQt5')"""
 
     # App Instance
     _ = QApplication(sys.argv)
