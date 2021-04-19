@@ -554,7 +554,7 @@ class App(QWidget):
         # TextBrowser
         self.tb = QTextBrowser()
         self.tb.setAcceptRichText(True)
-        self.tb.setOpenExternalLinks(True)
+        self.tb.setOpenExternalLinks(False)
 
         # LineEdit
         self.opline = QLineEdit()
@@ -594,6 +594,12 @@ class App(QWidget):
     # ========== 텍스트 브라우저에 텍스트 추가 (리셋 X) ===========
     def appendText(self, text):
         self.tb.append(text)
+
+
+    # ========== 오류 메세지 출력 함수 ===========
+    def addError(self, text):
+        self.tb.append('\n\n')
+        self.tb.append('<p style="color: red">' + text + '</p>')
 
 
     # ========== 명령어 히스토리 이동 (방향키) ===========
@@ -659,7 +665,8 @@ class App(QWidget):
 
             else:
                 self.resetLine()
-                self.setText(TEXT_MENU + '\n\n오류: 올바른 메뉴를 선택하세요.')
+                self.setText(TEXT_MENU)
+                self.addError('오류: 올바른 메뉴를 선택하세요.')
 
 
         # ========== 생성 페이지 ===========
@@ -710,7 +717,7 @@ class App(QWidget):
                 self.resetLine()
                 
                 if len(todoList) == 0:
-                    self.setText('오류: 추가된 할 일이 없어 시간표를 생성할 수 없습니다.')
+                    self.addError('오류: 추가된 할 일이 없어 시간표를 생성할 수 없습니다.')
                 else:
                     AddTable(todoList)
                     completeTable()
@@ -766,7 +773,8 @@ class App(QWidget):
                         infoText = '\n\n경고: 일치하는 할 일이 없습니다. 데이터를 삭제하지 않았습니다.'
 
                 WriteOnTodoTable(todoList)
-                self.setText(NOW_TODO + infoText)
+                self.setText(NOW_TODO)
+                self.addError(infoText)
 
 
             # ========== 검색 ===========
@@ -776,7 +784,8 @@ class App(QWidget):
 
                 tmpStr = ''.join(oplist)[3:] # '/검색'을 제외하고 공백을 없앤 후 합친 문자열
                 if tmpStr == '': # /검색만 치고 내용을 입력 안 한 케이스
-                    self.setText(NOW_TODO + '\n\n오류: 검색할 내용을 1자 이상 입력하세요.')
+                    self.setText(NOW_TODO)
+                    self.addError('오류: 검색할 내용을 1자 이상 입력하세요.')
                     return
                 else:
                     tmpList = tmpStr.split('-') # 리스트에 원소가 2개인지 체크해서 2개가 아니면 에러(하이픈이 2개 이상 들어온거)
@@ -801,7 +810,8 @@ class App(QWidget):
 
                     if (len(searchedList) == 0):
                         WriteOnTodoTable(todoList)
-                        self.setText(NOW_TODO + '\n\n검색 결과가 없습니다.')
+                        self.setText(NOW_TODO)
+                        self.addError('검색 결과가 없습니다.')
                     else:
                         WriteOnTodoTable(searchedList)
                         self.setText('검색 결과 : \n\n' + NOW_TODO)
@@ -810,7 +820,8 @@ class App(QWidget):
             # ========== 예외 ===========
             else:
                 completeTable()
-                self.setText(NOW_TODO + '\n\n오류: 인식할 수 없는 명령어입니다.')
+                self.setText(NOW_TODO)
+                self.addError('오류: 인식할 수 없는 명령어입니다.')
 
         self.resetLine()
         oplist = None
