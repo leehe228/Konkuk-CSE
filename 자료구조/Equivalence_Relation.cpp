@@ -12,15 +12,22 @@ class List {
 public:
     List();
     int Insert(int x);
-    void Zero();
+    void setZero();
     int Next();
-    int Z;
+    bool isZero;
     Node* head;
     Node* current;
 };
 
+class Lists {
+public:
+    Lists() = default;
+    static inline bool V[1000];
+    static inline List LinkedList[1000];
+};
+
 List::List()
-    :head(nullptr), current(head) {
+    :head(nullptr), current(head), isZero(false) {
 }
 
 int List::Insert(int x) {
@@ -32,13 +39,13 @@ int List::Insert(int x) {
     return 1;
 }
 
-void List::Zero() {
-    Z = 1;
+void List::setZero() {
+    isZero = true;
 }
 
 int List::Next() {
-    if (Z == 1) {
-        Z = 0;
+    if (isZero) {
+        isZero = false;
         current = head;
     }
     else current = current->next;
@@ -47,79 +54,81 @@ int List::Next() {
     else return current->data;
 }
 
-int V[1000];
-List LK[1000];
-int Stack[1000];
-int StackPointer = 0;
+class Stack {
+private:
+    int data[1000];
+    int pointer = 0;
+public:
+    Stack();
+    void Push(int x);
+    int Pop();
+    bool isEmpty();
+};
 
-void Push(int x) {
-    Stack[StackPointer] = x;
-    StackPointer++;
+Stack::Stack()
+    :pointer(0) {
+    
+    for (int i = 0; i < 1000; i++) {
+        data[i] = 0;
+    }
 }
 
-int Pop() {
-    StackPointer--;
-    return Stack[StackPointer];
+void Stack::Push(int x) {
+    data[pointer++] = x;
 }
 
-bool IsEmpty() {
-    return StackPointer == 0;
+int Stack::Pop() {
+    return data[--pointer];
+}
+
+bool Stack::isEmpty() {
+    return (pointer == 0);
 }
 
 int main(int argc, char* argv[]) {
     int n, m;
     cin >> n >> m;
 
-    Node* T;
+    Stack stack;
 
-    int i, j, cur, newNode;
+    int i, cur, newNode;
     for (i = 0; i < m; i++) {
         int x, y;
         cin >> x >> y;
-        LK[x].Insert(y);
-        LK[y].Insert(x);
+        Lists::LinkedList[x].Insert(y);
+        Lists::LinkedList[y].Insert(x);
     }
 
     for (i = 1; i <= n; i++) {
-        LK[i].Zero();
+        Lists::LinkedList[i].setZero();
     }
 
     for (i = 1; i <= n; i++) {
-        if (V[i] == 0) {
+        if (!Lists::V[i]) {
             cur = i; // 현재 방문 노드가 cur
-            V[cur] = 1; // 방문 체크
+            Lists::V[cur] = true; // 방문 체크
             cout << cur << '\t';
             while (true) {
-                if ((newNode = LK[cur].Next()) != 0) {
+                if ((newNode = Lists::LinkedList[cur].Next()) != 0) {
                     // 안가본 곳이면
-                    if (V[newNode] == 0) {
+                    if (!Lists::V[newNode]) {
                         // 방문
-                        Push(cur);
+                        stack.Push(cur);
                         cur = newNode;
-                        V[cur] = 1;
+                        Lists::V[cur] = true;
                         cout << cur << '\t';
                     }
                 }
                 else {
-                    if (IsEmpty()) break;
+                    if (stack.isEmpty()) break;
                     else {
-                        cur = Pop();
+                        cur = stack.Pop();
                     }
                 }
             }
             cout << endl;
         }
     }
-
-    /*for (i = 1; i <= n; i++) {
-        // 첫 번째 노드 받아옴
-        T = LK[i].First();
-        while (T != nullptr) {
-            cout << T->data << '\t';
-            T = LK[i].Next();
-        }
-        cout << endl;
-    }*/
 
     return 0;
 }

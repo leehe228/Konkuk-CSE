@@ -71,14 +71,17 @@ void List::Print() {
     temp = this->head;
 
     while (temp != nullptr) {
-        cout << temp->data << " -> ";
+        if (temp->data == INT_MAX || temp->data == INT_MIN) {
+            cout << (temp->data == INT_MAX ? "END" : "START -> ");
+        }
+        else cout << temp->data << " -> ";
         temp = temp->next;
     }
     cout << endl;
 }
 
 int main(int argc, char* argv[]) {
-    
+
     char com;
     Node* P, * L;
     int x;
@@ -93,10 +96,10 @@ int main(int argc, char* argv[]) {
 
         else if (com == 's') {
             cin >> x;
-            
-            if (LinkedList.Search(x, &P, &L) == 0) 
+
+            if (LinkedList.Search(x, &P, &L) == 0)
                 cout << "Not found" << endl;
-            else 
+            else
                 cout << "Found at " << L << endl;
         }
 
