@@ -725,10 +725,191 @@ class App(QWidget):
 
 
             # ========== 수정 ===========
-            elif oplist[0] == '/수정':
+            # 일치하는 할일ㅇ, 할일 입력여부ㅇ, 해당하는 구성요소 지칭어ㅇ, 구성요소 지칭어 입력여부ㅇ, 수정할 내용 입력여부, 지칭어에 알맞은접접확인ㅇ
+            elif oplist[0] == '/수정': 
                 self.resetLine()
+                transIndex = 0 #수정하고자 하는 할일의 todoList[] 인덱스 값
+                
+                if len(oplist) == 1:
+                    infoText = '오류:'
+                    return
+                if len(todoList) == 0:
+                    infoText = '\n\n오류: 수정할 할 일의 내용을 입력해주세요.'
 
-                pass
+                elif GetFixedLen(oplist[1]) > 10:
+                    infoText = '\n\n오류: 검색어의 고정폭 길이는 10을 초과할 수 없습니다.'
+
+                else: 
+                    toModify = ''
+                    for i in range(1, len(oplist), 1):
+                        toModify += oplist[i] + ' '
+                    toModify = toModify.strip()
+                    foundTodo = False #첫번째 인덱스의 내용(할일) 일치여부 확인
+                    i = 0
+                    while(i < len(todoList)):
+                        if(todoList[i][0] == toModify): 
+                            transIndex = i
+                            foundTodo = True
+                            break
+                        else:
+                            i += 1
+  
+
+                    cIndex = 0 # 구성요소 지칭어에따른 todoList[transIndex][cIndex] 위치
+                    # 0할일 1필수태그 2시작시각(시) 3시작시작(분) 4지속시간(h) 5지속시간(m) 6요일집합{} 7서브태그 
+                    minIndex = 0 # 시작시각과 지속시간을 수정하고자 할 때 '분'에 해당하는 인덱스 
+
+                    rToMod = False # 모든구문을 통과하여 수정 직전에 True
+
+                    if foundTodo == True: #일치하는 할일 발견
+                        c1 ="" # 할 일
+                        c2 ="" # 구성요소 지칭어 (ex 요일, 태그, 시작시각..)
+                        c3 ="" # 수정할 내용
+                        c1 = toModify[toModify.find(" "):toModify.find("-")-1]
+                        c1 = c1.strip()
+                        
+                        c2 = toModify[toModify.find("-"):toModify.find(" ",toModify.find("-"))]
+                        c2 = c2.strip()
+                        
+                        c3 = toModify[toModify.find(" ",toModify.find("-")):]
+                        c3 = c3.strip()
+                        
+                        if c2 == "-요일":
+                            cIndex = 6
+                            if todoList[transIndex][cIndex] == None: #수정대상이 None값인 경우
+                                infoText = '\n\n오류: 해당하는 구성요소 지칭어가 없습니다.' 
+
+                            elif c3[0] == "{" and c3[len(c3)-1] =="}":
+
+                                afterModList = [] #리스트의 경우에는 afterModList 나머지는 afterMod /최종변경될 값을 여기에 저장
+                                index = 0
+                                for i in c3.split(" "):    #시간 데이터 분류 '요일'
+                                    i = i.replace("}", "").replace("{", "").replace("-", "")
+                                    if ("월요일" == i or "월" == i) :
+                                        afterModList.append(i)
+                                    elif ("화요일" == i or "화" == i) :
+                                        afterModList.append(i)
+                                    elif ("수요일" == i or "수" == i) :
+                                        afterModList.append(i)
+                                    elif ("목요일" == i or "목" == i) :
+                                        afterModList.append(i)
+                                    elif ("금요일" == i or "금" == i) :
+                                        afterModList.append(i)
+                                    elif ("토요일" == i or "토" == i) :
+                                        afterModList.append(i)
+                                    elif ("일요일" == i or "일" == i) :
+                                        afterModList.append(i)
+                    
+                                    index += 1
+                                
+                            #temptList = todoList[transIndex]    
+                            else:
+                                infoText = '\n\n오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
+
+                            if rToMod ==True:
+                                todoList[transIndex][cIndex] = afterModList# 본 시간표에 수정
+
+                        elif c2 == "-시작시각":
+                            cIndex = 2
+                            minIndex =3
+                            if todoList[transIndex][cIndex] == None: #수정대상이 None값인 경우
+                                infoText = '\n\n오류: 해당하는 구성요소 지칭어가 없습니다.' 
+
+                            if c3[0] == "{" and c3[len(c3)-1] =="}":
+                                if c3.find("분") > 0:
+                                    minIndex =5
+
+                                afterModList =[]
+                                c3 = c3.replace("}", "")
+                                c3 = c3.replace("{", "")
+                                c3 = c3.replace(" ", "")
+                                c3 = c3.replace("시", " ")
+                                c3 = c3.replace("분", "")
+                                afterModList = c3.split(" ")
+
+                            else:
+                                infoText = '\n\n오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
+
+                            if rToMod ==True:
+                                todoList[transIndex][cIndex] = afterModList[0] # 본 시간표에 수정
+                                todoList[transIndex][minIndex] = afterModList[1]
+
+                        elif c2 == "-지속시간":
+                            cIndex = 4
+                            if todoList[transIndex][cIndex] == None: #수정대상이 None값인 경우
+                                infoText = '\n\n오류: 해당하는 구성요소 지칭어가 없습니다.' 
+
+                            if c3[0] == "{" and c3[len(c3)-1] =="}":
+                                if c3.find("m") > 0:
+                                    minIndex =5
+
+                                afterModList =[]
+                                c3 = c3.replace("}", "")
+                                c3 = c3.replace("{", "")
+                                c3 = c3.replace(" ", "")
+                                c3 = c3.replace("h", " ")
+                                c3 = c3.replace("m", "")
+                                afterModList = c3.split(" ")
+
+                            else:
+                                infoText = '\n\n오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
+
+                            if rToMod ==True:
+                                todoList[transIndex][cIndex] = afterModList[0] # 본 시간표에 수정
+                                todoList[transIndex][minIndex] = afterModList[1]
+                            
+
+                        elif c2 == "-필수태그":
+                            cIndex = 1
+                            if todoList[transIndex][cIndex] == None: #수정대상이 None값인 경우
+                                infoText = '\n\n오류: 해당하는 구성요소 지칭어가 없습니다.' 
+                            if c3[0] == "#":
+                                afterMod = None
+                                c3 = c3.replace("#","")
+                                c3 = c3.replace(" ","")
+                                if c3 == "강의":
+                                    afterMod = 0  
+                                    rToMod = True                          
+                                elif c3 == "과제":
+                                    afterMod = 1
+                                    rToMod = True
+                                elif c3 == "일과":
+                                    afterMod = 2
+                                    rToMod = True
+                                
+                            if rToMod ==True:
+                                todoList[transIndex][cIndex] = afterMod # 본 시간표에 수정
+
+
+                            else:
+                                infoText = '\n\n오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
+                                
+                             
+
+                        elif c2 == "-서브태그":
+                            cIndex = 7
+                            if todoList[transIndex][cIndex] == None: #수정대상이 None값인 경우
+                                infoText = '\n\n오류: 해당하는 구성요소 지칭어가 없습니다.'
+                            if c3[0] == "-":                            
+                                afterMod = c3.replace("-","")
+                                rToMod = True
+
+                            else:
+                                infoText = '\n\n오류: 구성요소 지칭어를 입력해주세요'
+                            
+                        if rToMod ==True:
+                            todoList[transIndex][cIndex] = afterMod # 본 시간표에 수정
+
+
+                    elif(foundTodo == False):
+                        infoText = '\n\n오류: 내용이 일치하는 할 일이 없습니다.'
+
+                #todoList[transIndex]
+                #맨 마지막에 수정된 구문이 문법 최종검사
+                user_save_check = True
+                WriteOnTodoTable(todoList)
+                self.addError(infoText)
+                self.setText(NOW_TODO)
 
 
             # ========== 삭제 ===========
