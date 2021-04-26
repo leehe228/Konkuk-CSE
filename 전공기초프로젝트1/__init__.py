@@ -1,7 +1,8 @@
 #-*-coding:utf-8-*-
 
 import PyQt5
-from PyQt5.QtWidgets import (QApplication, QWidget, QGridLayout, QLabel, QLineEdit, QTextBrowser, QMessageBox)
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QGridLayout, QLabel, QLineEdit, QTextBrowser, QMessageBox, QFileDialog)
 from PyQt5.QtGui import (QFontDatabase, QFont)
 from PyQt5.QtCore import Qt
 
@@ -146,8 +147,8 @@ class Model_Time(object):
 
     # 딥러닝 네트워크 구축
     def __init__(self):
-        self.X = tf.placeholder(tf.float32, shape=[None, 3]) # 입력 3 (0 ~ 2)
-        self.Y = tf.placeholder(tf.float32, shape=[None, 15]) # 출력 15 (9 ~ 23)
+        self.X = tf.placeholder(tf.float32, shape=[None, 3])  # 입력 3 (0 ~ 2)
+        self.Y = tf.placeholder(tf.float32, shape=[None, 15])  # 출력 15 (9 ~ 23)
 
         self.W1 = tf.Variable(tf.random_uniform([3, 15], -1., 1.))
         self.b1 = tf.Variable(tf.zeros([15]))
@@ -176,26 +177,27 @@ class Model_Time(object):
         # cost 계산
         self.cost = tf.reduce_mean(
             tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.Y, logits=self.model))
-        
+
         # optimizer
         self.optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
         self.train_op = self.optimizer.minimize(self.cost)
 
-
     # 학습 함수
+
     def TRAIN(self, x_data, y_data, iter):
         init = tf.global_variables_initializer()
         self.sess = tf.Session()
         self.sess.run(init)
         # iter 번 학습 시행
         for step in range(iter):
-            self.sess.run(self.train_op, feed_dict={self.X: x_data, self.Y: y_data})   
-    
+            self.sess.run(self.train_op, feed_dict={
+                          self.X: x_data, self.Y: y_data})
 
     # 예측 함수
+
     def PREDICT(self, x_data, y_data, p_data):
-        self.TRAIN(x_data, y_data, 100) # 경험 집합 데이터 100번 학습
-        self.prediction = tf.argmax(self.model, 1) 
+        self.TRAIN(x_data, y_data, 100)  # 경험 집합 데이터 100번 학습
+        self.prediction = tf.argmax(self.model, 1)
         # 예측 시행
         return self.sess.run(self.prediction, feed_dict={self.X: p_data})
         self.sess.close()
@@ -234,19 +236,18 @@ class Model_Week(object):
 
         self.cost = tf.reduce_mean(
             tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.Y, logits=self.model))
-        
+
         self.optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
         self.train_op = self.optimizer.minimize(self.cost)
-
 
     def TRAIN(self, x_data, y_data, iter):
         init = tf.global_variables_initializer()
         self.sess = tf.Session()
         self.sess.run(init)
-    
+
         for step in range(iter):
-            self.sess.run(self.train_op, feed_dict={self.X: x_data, self.Y: y_data})   
-    
+            self.sess.run(self.train_op, feed_dict={
+                          self.X: x_data, self.Y: y_data})
 
     def PREDICT(self, x_data, y_data, p_data):
         self.TRAIN(x_data, y_data, 100)
@@ -255,10 +256,10 @@ class Model_Week(object):
         self.sess.close()
 
 
-PAGE = 1 # 현재 페이지 (1 : 메인메뉴  / 2: 생성 페이지)
+PAGE = 1  # 현재 페이지 (1 : 메인메뉴  / 2: 생성 페이지)
 
-NOW_TODO = str(TEXT_TODO_HEADER) # 현재 할 일 테이블 텍스트
-NOW_TABLE = str(TEXT_TABLE) # 현재 시간표 테이블 텍스트
+NOW_TODO = str(TEXT_TODO_HEADER)  # 현재 할 일 테이블 텍스트
+NOW_TABLE = str(TEXT_TABLE)  # 현재 시간표 테이블 텍스트
 
 # 할 일 리스트
 todoList = list()
@@ -272,10 +273,11 @@ op_temp_idx = 1
 
 # 유저가 마지막으로 수정 후 저장 여부
 user_save_check = None
+user_table_make = False
 
 # 학습용 모델
-model_time = Model_Time() # 시간
-model_week = Model_Week() # 요일
+model_time = Model_Time()  # 시간
+model_week = Model_Week()  # 요일
 
 # epsilon
 epsilon = 0.8
@@ -464,9 +466,9 @@ def AddTable(tasks):
     NOW_TABLE = TEXT_TABLE
 
     # [0]  / [1]  / [2]    [3]    / [4]     [5]    / [6]   / [7]
-    # 내용 / 태그  / 시작시 시작분  / 지속시  지속분  / 요일  / 서브태그    
+    # 내용 / 태그  / 시작시 시작분  / 지속시  지속분  / 요일  / 서브태그
     for task in tasks:
-        
+
         # 지속 시각 예측이 필요한 경우
         if (task[4] is None):
             task[4] = randrange(1, 3)
@@ -481,11 +483,12 @@ def AddTable(tasks):
 
             if len(EXP_SET) == 0:
                 x_data = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-                y_time_data = np.array([[0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                                        [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], 
+                y_time_data = np.array([[0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                        [0, 0, 0, 0, 0, 0, 0, 1,
+                                            0, 0, 0, 0, 0, 0, 0],
                                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]])
-                y_week_data = np.array([[0, 1, 0, 0, 0, 0, 0], 
-                                        [0, 0, 0, 1, 0, 0, 0], 
+                y_week_data = np.array([[0, 1, 0, 0, 0, 0, 0],
+                                        [0, 0, 0, 1, 0, 0, 0],
                                         [0, 0, 0, 0, 0, 1, 0]])
             else:
                 l_tag, l_time, l_week = [], [], []
@@ -509,7 +512,8 @@ def AddTable(tasks):
             # 시작시각 예측이 필요한 경우
             if (task[2] is None):
                 if random() < epsilon:
-                    task[2] = int(model_time.PREDICT(x_data, y_time_data, p_data)) + 9
+                    task[2] = int(model_time.PREDICT(
+                        x_data, y_time_data, p_data)) + 9
                     task[3] = choice([0, 30])
                 else:
                     task[2] = randrange(9, 22)
@@ -519,18 +523,19 @@ def AddTable(tasks):
             if (task[6] is None):
                 if random() < epsilon:
                     hw = ['월', '화', '수', '목', '금', '토', '일']
-                    task[6] = list(hw[int(model_week.PREDICT(x_data, y_week_data, p_data))])
+                    task[6] = list(
+                        hw[int(model_week.PREDICT(x_data, y_week_data, p_data))])
                 else:
                     task[6] = list(choice(['월', '화', '수', '목', '금', '토', '일']))
-                
+
         print(task)
         if (task[2] is not None) and (task[4] is not None) and (task[6] is not None):
             WriteOnTable(task)
             EXP_SET.append(task)
         else:
-            print("알 수 없는 오류 발생") # 이 오류가 발생한다면 프로그램 자체에 중대한 오류가 있는 것.
+            print("알 수 없는 오류 발생")  # 이 오류가 발생한다면 프로그램 자체에 중대한 오류가 있는 것.
 
-        epsilon -= 0.0001 # 입실론 조정
+        epsilon -= 0.0001  # 입실론 조정
 # END of DEF AddTable
 
 
@@ -540,7 +545,6 @@ class App(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
-
 
     def initUI(self):
         # Set Window
@@ -566,43 +570,44 @@ class App(QWidget):
         grid.addWidget(self.opline, 1, 0)
         self.show()
 
-
     # ========== 닫는 이벤트 발생 시 호출 ===========
+
     def closeEvent(self, event):
         # TODO
         global user_save_check
 
         if user_save_check:
-            reply = QMessageBox.question(self, '종료', '저장되지 않은 변경 사항은 삭제됩니다. 종료하시겠습니까?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            reply = QMessageBox.question(
+                self, '종료', '저장되지 않은 변경 사항은 삭제됩니다. 종료하시겠습니까?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 event.accept()
             else:
                 event.ignore()
 
-
     # ========== 텍스트 브라우저 초기화 ===========
+
     def clearScreen(self):
         self.tb.clear()
 
-
     # ========== 텍스트 브라우저에 텍스트 표시 (리셋) ===========
+
     def setText(self, text):
         self.tb.clear()
         self.tb.setText(text)
 
-
     # ========== 텍스트 브라우저에 텍스트 추가 (리셋 X) ===========
+
     def appendText(self, text):
         self.tb.append(text)
 
-
     # ========== 오류 메세지 출력 함수 ===========
+
     def addError(self, text):
         self.tb.append('\n\n')
         self.tb.append('<p style="color: red">' + text + '</p>')
 
-
     # ========== 명령어 히스토리 이동 (방향키) ===========
+
     def keyPressEvent(self, e):
         global op_temp_idx, op_history, op_history_idx
 
@@ -618,12 +623,12 @@ class App(QWidget):
             elif (op_temp_idx == op_history_idx):
                 self.opline.setText('')
 
-
     # ========== 엔터키 입력 시 호출 ===========
+
     def opEntered(self):
 
-        global NOW_TODO, todoList, PAGE, user_save_check
-        global op_history, op_history_idx, op_temp_idx
+        global NOW_TODO, todoList, PAGE, user_save_check, NOW_TABLE, TEXT_TABLE
+        global op_history, op_history_idx, op_temp_idx, user_table_make
 
         opstr = self.opline.text()
         oplist = list(map(str, opstr.split()))
@@ -631,7 +636,7 @@ class App(QWidget):
         # ========== 예외 ===========
         if opstr is None or opstr == '':
             return
-        
+
         op_history.append(opstr)
         op_history_idx += 1
         op_temp_idx = op_history_idx + 1
@@ -646,28 +651,142 @@ class App(QWidget):
                 WriteOnTodoTable(todoList)
                 self.setText(NOW_TODO)
 
-
             # ========== 불러오기 ===========
             elif oplist[0] == '2':
                 self.resetLine()
+                # .tbl .tds
+                fname = QFileDialog.getOpenFileName(self, '불러오기', './', '*.tbl *.tds')
+                
+                if fname[0]:
+                    if fname[0].split('.')[-1] == 'tbl':
+                        f = open(fname[0], 'r', encoding='utf-8')
+                        data = f.read()
+                        if data == '' or data == None:
+                            self.addError("오류: 빈 파일이거나 손상된 파일이므로 불러올 수 없습니다.")
+                        else:
+                            NOW_TABLE = data
+                            PAGE = 2
+                            f.close()
+                            self.setText(NOW_TABLE)
+                    else:
+                        f = open(fname[0], 'r', encoding='utf-8')
+                        datas = f.readlines()
+                        if len(datas) == 0 or datas == None:
+                            self.addError("오류: 빈 파일이거나 손상된 파일이므로 불러올 수 없습니다.")
+                        else:
+                            PAGE = 2
+                            newDatas = []
+                            for todo in datas:
+                                tlist = todo.split(',')
+
+                                for i in range(8):
+                                    if tlist[i] == 'None':
+                                        tlist[i] = None
+
+                                if tlist[1] != None:
+                                    tlist[1] = int(tlist[1])
+
+                                if tlist[2] != None:
+                                    tlist[2] = int(tlist[2])
+
+                                if tlist[3] != None:
+                                    tlist[3] = int(tlist[3])
+
+                                if tlist[4] != None:
+                                    tlist[4] = int(tlist[4])
+
+                                if tlist[5] != None:
+                                    tlist[5] = int(tlist[5])
+
+                                if tlist[6] != None:
+                                    tlist[6] = tlist[6].split('&')
+
+                                if tlist[7] != None:
+                                    tlist[7] = tlist[7].replace('\n', '')
+
+                                newDatas.append(tlist)
+
+                            print(newDatas)
+                            todoList = newDatas
+                            user_save_check = True
+                            WriteOnTodoTable(todoList)
+                            self.setText(NOW_TODO)
 
 
             # ========== 저장하기 ===========
             elif oplist[0] == '3':
                 self.resetLine()
+                fname = QFileDialog.getSaveFileName(self, '저장하기', './')
+                print(fname)
                 user_save_check = False
 
+                infoText = ''
+                if todoList == None or len(todoList) == 0:
+                    infoText = '경고: 추가된 할 일이 없어 할 일 파일을 저장하지 않았습니다.'
+                else:
+                    t = ''
+
+                    for todo in todoList:
+                        t += todo[0] + ','
+                        t += str(todo[1]) + ','
+                        if todo[2] != None:
+                            t += str(todo[2]) + ','
+                        else:
+                            t += 'None,'
+                        
+                        if todo[3] != None:
+                            t += str(todo[3]) + ','
+                        else:
+                            t += 'None,'
+                            
+                        if todo[4] != None:
+                            t += str(todo[4]) + ','
+                        else:
+                            t += 'None,'
+
+                        if todo[5] != None:
+                            t += str(todo[5]) + ','
+                        else:
+                            t += 'None,'
+
+                        if todo[6] != None:
+                            t += str('&'.join(todo[6])) + ','
+                        else:
+                            t += 'None,'
+
+                        if todo[7] != None:
+                            t += todo[7] + '\n'
+                        else:
+                            t += 'None\n'
+                    
+                    f = open(fname[0] + '.tds', mode='wt', encoding='utf-8')
+                    f.write(t)
+                    f.close()
+
+                    self.appendText('\n할 일 파일 : ' + fname[0] + '.tds 파일을 저장하였습니다.')
+
+                if user_table_make == False:
+                    if infoText != '':
+                        infoText += '\n\n'
+                    infoText += '경고: 생성된 테이블이 없어 파일을 저장하지 않았습니다.'
+                else:
+                    f = open(fname[0] + '.tbl', mode='wt', encoding='utf-8')
+                    f.write(NOW_TABLE)
+                    f.close()
+
+                    self.appendText('\n시간표 파일 : ' + fname[0] + '.tbl 파일을 저장하였습니다.')
+                
+                if infoText != '':
+                    self.addError(infoText)
 
             # ========== 종료하기 ===========
             elif oplist[0] == '4':
                 self.resetLine()
-                
 
             else:
                 self.resetLine()
                 self.setText(TEXT_MENU)
                 self.addError('오류: 올바른 메뉴를 선택하세요.')
-
 
         # ========== 생성 페이지 ===========
         elif PAGE == 2:
@@ -676,22 +795,21 @@ class App(QWidget):
                 self.resetLine()
                 self.setText(TEXT_HELP)
 
-
             # ========== 추가 ===========
             elif oplist[0] == '/추가':
                 index = 0
                 inputList = []
                 timeList = []
-                checker = True  #오류 존재여부 확인
+                checker = True  # 오류 존재여부 확인
 
                 index = 0
-                for i in oplist:    #할 일 내용 하나로 묶어주기
-                    todo = ""   #할 일
-                    if ('#' in i) or ('{' in i) :
+                for i in oplist:  # 할 일 내용 하나로 묶어주기
+                    todo = ""  # 할 일
+                    if ('#' in i) or ('{' in i):
                         for k in range(1, index):
                             todo += oplist[k] + " "
 
-                        for k in range(1, index):   #oplist에서 할 일 data 삭제
+                        for k in range(1, index):  # oplist에서 할 일 data 삭제
                             del oplist[1]
                         break
 
@@ -699,7 +817,7 @@ class App(QWidget):
                 inputList.append(todo.strip())
 
                 index = 0
-                for i in oplist:    #필수 태그 추출
+                for i in oplist:  # 필수 태그 추출
                     if '#' in i:
                         tagList = ['#강의', '#과제', '#일과']
                         if i not in tagList:
@@ -709,39 +827,41 @@ class App(QWidget):
                             return
                         else:
                             inputList.append(tagList.index(i))
-                        del oplist[index]   #oplist에서 필수 태그 data 삭제
+                        del oplist[index]  # oplist에서 필수 태그 data 삭제
                         break
                     elif (not('#' in ' '.join(oplist))):
                         inputList.append(None)
                         break
                     index += 1
-                
 
                 index = 0
                 openIndex = 0
                 closeIndex = 0
-                for i in oplist:    #{시간 데이터}를 timeList에 따로 분리
-                    if ('{' in i) :
+                for i in oplist:  # {시간 데이터}를 timeList에 따로 분리
+                    if ('{' in i):
                         openIndex = index
                     if ('}' in i):
                         closeIndex = index
                     index += 1
-                
+
                 if (openIndex != closeIndex or (openIndex != 0 and closeIndex != 0 and len(oplist[openIndex]) > 2)) and (openIndex != 0 and closeIndex != 0):
                     for k in range(openIndex, closeIndex + 1):
-                        timeList.append(oplist[k].replace("{", "").replace("}", ""))
+                        timeList.append(oplist[k].replace(
+                            "{", "").replace("}", ""))
 
-                    for k in range(openIndex, closeIndex + 1):   #oplist에서 {시간 데이터} data 삭제
+                    # oplist에서 {시간 데이터} data 삭제
+                    for k in range(openIndex, closeIndex + 1):
                         del oplist[openIndex]
-                    
+
                     if timeList:
                         index = 0
                         if not timeList:
                             inputList.append(None)
                         else:
-                            for i in timeList:    #시간 데이터 분류 '시'
+                            for i in timeList:  # 시간 데이터 분류 '시'
                                 if '분' in i or '반' in i:
-                                    self.addError("오류: '시작시간(분)' 정보가 '시작시간(시)' 정보보다 앞에 있거나 띄어쓰기 없이 붙어 있습니다.")
+                                    self.addError(
+                                        "오류: '시작시간(분)' 정보가 '시작시간(시)' 정보보다 앞에 있거나 띄어쓰기 없이 붙어 있습니다.")
                                     checker = False
                                     del timeList[index]
                                     inputList.append(None)
@@ -750,7 +870,8 @@ class App(QWidget):
                                     inputList.append(None)
                                     break
                                 if ('시' in i) and i.replace('시', '').replace("시간", "") != "":
-                                    inputList.append(int(i.replace('시', '').replace("시간", "")))
+                                    inputList.append(
+                                        int(i.replace('시', '').replace("시간", "")))
                                     del timeList[index]
                                     break
                                 elif (not('시' in ' '.join(timeList))):
@@ -759,17 +880,15 @@ class App(QWidget):
 
                                 index += 1
 
-                        
-                        
                         index = 0
                         if not timeList:
                             inputList.append(None)
                         else:
-                            for i in timeList:    #시간 데이터 분류 '분'
+                            for i in timeList:  # 시간 데이터 분류 '분'
                                 if i.replace("분", "") == "":
                                     inputList.append(None)
                                     break
-                                if ('분' in i) and i.replace("분", "") != "" :
+                                if ('분' in i) and i.replace("분", "") != "":
                                     inputList.append(int(i.replace("분", "")))
                                     del timeList[index]
                                     break
@@ -782,14 +901,15 @@ class App(QWidget):
                                     break
 
                                 index += 1
-                        
+
                         index = 0
                         if not timeList:
                             inputList.append(None)
                         else:
-                            for i in timeList:    #시간 데이터 분류 'h'
+                            for i in timeList:  # 시간 데이터 분류 'h'
                                 if 'm' in i:
-                                    self.addError("오류: '지속시간(m)' 정보가 '지속시간(h)' 정보보다 앞에 있거나 띄어쓰기 없이 붙어 있습니다.")
+                                    self.addError(
+                                        "오류: '지속시간(m)' 정보가 '지속시간(h)' 정보보다 앞에 있거나 띄어쓰기 없이 붙어 있습니다.")
                                     checker = False
                                     del timeList[index]
                                     inputList.append(None)
@@ -806,13 +926,12 @@ class App(QWidget):
                                     break
 
                                 index += 1
-                        
-                        
+
                         index = 0
                         if not timeList:
                             inputList.append(None)
                         else:
-                            for i in timeList:    #시간 데이터 분류 'm'
+                            for i in timeList:  # 시간 데이터 분류 'm'
                                 if i.replace("m", "") == "":
                                     inputList.append(None)
                                     break
@@ -823,30 +942,30 @@ class App(QWidget):
                                 elif (not('m' in ' '.join(timeList))):
                                     inputList.append(None)
                                     break
-                                
+
                                 index += 1
-                        
+
                         index = 0
                         if not timeList:
                             inputList.append(None)
                         else:
                             weekList = []
-                            for i in timeList:    #시간 데이터 분류 '요일'
-                                if ("월요일" == i or "월" == i) :
+                            for i in timeList:  # 시간 데이터 분류 '요일'
+                                if ("월요일" == i or "월" == i):
                                     weekList.append("월")
-                                elif ("화요일" == i or "화" == i) :
+                                elif ("화요일" == i or "화" == i):
                                     weekList.append("화")
-                                elif ("수요일" == i or "수" == i) :
+                                elif ("수요일" == i or "수" == i):
                                     weekList.append("수")
-                                elif ("목요일" == i or "목" == i) :
+                                elif ("목요일" == i or "목" == i):
                                     weekList.append("목")
-                                elif ("금요일" == i or "금" == i) :
+                                elif ("금요일" == i or "금" == i):
                                     weekList.append("금")
-                                elif ("토요일" == i or "토" == i) :
+                                elif ("토요일" == i or "토" == i):
                                     weekList.append("토")
-                                elif ("일요일" == i or "일" == i) :
+                                elif ("일요일" == i or "일" == i):
                                     weekList.append("일")
-                                
+
                                 index += 1
 
                             if weekList:
@@ -862,13 +981,12 @@ class App(QWidget):
                     if openIndex != 0:
                         del oplist[openIndex]
 
-
                 index = 0
                 start_index = 0
-                for i in oplist:    #서브 태그 추출
+                for i in oplist:  # 서브 태그 추출
                     if '-' in i:
                         start_index = index
-                        sstr = ""   #서브 태그 합쳐서 저장
+                        sstr = ""  # 서브 태그 합쳐서 저장
                         for k in range(start_index, len(oplist)):
                             sub_str = oplist[k].replace("-", "")
                             sstr += sub_str
@@ -883,17 +1001,18 @@ class App(QWidget):
                         break
                     index += 1
 
-                
                 print(inputList)
                 #문법 규칙 확인
                 infoText = ""
-                
+
                 if inputList[0] != None and GetFixedLen(inputList[0]) > 10:
-                    infoText = "오류: 할일의 고정폭 길이가 10 초과!!! 현재 길이: " + str(GetFixedLen(inputList[0]))
+                    infoText = "오류: 할일의 고정폭 길이가 10 초과!!! 현재 길이: " + \
+                        str(GetFixedLen(inputList[0]))
                     self.addError(infoText)
                     checker = False
                 if inputList[7] != None and GetFixedLen(inputList[7]) > 24:
-                    infoText = "오류: 서브태그의 고정폭 길이가 24 초과!!! 현재 길이: " + str(GetFixedLen(inputList[7]))
+                    infoText = "오류: 서브태그의 고정폭 길이가 24 초과!!! 현재 길이: " + \
+                        str(GetFixedLen(inputList[7]))
                     self.addError(infoText)
                     checker = False
                 if inputList[1] == None:
@@ -909,7 +1028,6 @@ class App(QWidget):
                     self.addError(infoText)
                     checker = False
 
-
                 if checker:
                     todoList.append(inputList)
                     user_save_check = True
@@ -917,22 +1035,23 @@ class App(QWidget):
                     print(todoList)
                     self.setText(NOW_TODO)
 
-
             # ========== 테스트 데이터 추가 ===========
             elif oplist[0] == '/테스트':
                 self.resetLine()
                 todoList.append(['할일1', 0, 9, 30, 0, 30, ['월'], '내용1'])
                 todoList.append(['할일2', 0, 10, 0, 1, 0, ['화'], '내용2'])
-                todoList.append(['할일3', 1, None, None, 1, 0, ['수', '금'], '내용3'])
+                todoList.append(
+                    ['할일3', 1, None, None, 1, 0, ['수', '금'], '내용3'])
                 todoList.append(['할일4', 2, 9, 30, 0, 30, None, '내용4'])
-                todoList.append(['할일5', 1, 16, 30, None, None, ['화', '토'], '내용5'])
-                todoList.append(['할일6', 0, None, None, None, None, ['목', '일'], '내용6'])
+                todoList.append(
+                    ['할일5', 1, 16, 30, None, None, ['화', '토'], '내용5'])
+                todoList.append(
+                    ['할일6', 0, None, None, None, None, ['목', '일'], '내용6'])
                 todoList.append(['할일7', 1, None, None, None, None, None, None])
 
                 user_save_check = True
                 WriteOnTodoTable(todoList)
                 self.setText(NOW_TODO)
-
 
             # ========== 뒤로가기 ===========
             elif oplist[0] == '//':
@@ -941,24 +1060,23 @@ class App(QWidget):
                 self.setText(TEXT_MENU)
                 PAGE = 1
 
-
             # ========== 입력완료 ===========
             elif oplist[0] == '/입력완료':
                 self.resetLine()
-                
+
                 if len(todoList) == 0:
                     self.addError('오류: 추가된 할 일이 없어 시간표를 생성할 수 없습니다.')
                 else:
                     AddTable(todoList)
                     completeTable()
                     self.setText(NOW_TABLE)
-
+                    user_table_make = True
 
             # ========== 수정 ===========
             # 일치하는 할일ㅇ, 할일 입력여부ㅇ, 해당하는 구성요소 지칭어ㅇ, 구성요소 지칭어 입력여부ㅇ, 수정할 내용 입력여부, 지칭어에 알맞은접접확인ㅇ
-            elif oplist[0] == '/수정': 
+            elif oplist[0] == '/수정':
                 self.resetLine()
-                transIndex = 0 #수정하고자 하는 할일의 todoList[] 인덱스 값
+                transIndex = 0  # 수정하고자 하는 할일의 todoList[] 인덱스 값
                 infoText = ''
 
                 if len(todoList) == 0:
@@ -970,87 +1088,89 @@ class App(QWidget):
                 elif GetFixedLen(oplist[1]) > 10:
                     infoText = '오류: 검색어의 고정폭 길이는 10을 초과할 수 없습니다.'
 
-                else: 
+                else:
                     toModify = ''
                     for i in range(1, len(oplist), 1):
                         toModify += oplist[i] + ' '
                     toModify = toModify.strip()
-                    foundTodo = False #첫번째 인덱스의 내용(할일) 일치여부 확인
+                    foundTodo = False  # 첫번째 인덱스의 내용(할일) 일치여부 확인
                     i = 0
                     while(i < len(todoList)):
-                        if(todoList[i][0] == toModify.split(' ')[0]): 
+                        if(todoList[i][0] == toModify.split(' ')[0]):
                             transIndex = i
                             foundTodo = True
                             break
                         else:
                             i += 1
-  
 
-                    cIndex = 0 # 구성요소 지칭어에따른 todoList[transIndex][cIndex] 위치
-                    # 0할일 1필수태그 2시작시각(시) 3시작시작(분) 4지속시간(h) 5지속시간(m) 6요일집합{} 7서브태그 
-                    minIndex = 0 # 시작시각과 지속시간을 수정하고자 할 때 '분'에 해당하는 인덱스 
+                    cIndex = 0  # 구성요소 지칭어에따른 todoList[transIndex][cIndex] 위치
+                    # 0할일 1필수태그 2시작시각(시) 3시작시작(분) 4지속시간(h) 5지속시간(m) 6요일집합{} 7서브태그
+                    minIndex = 0  # 시작시각과 지속시간을 수정하고자 할 때 '분'에 해당하는 인덱스
 
-                    rToMod = False # 모든구문을 통과하여 수정 직전에 True
+                    rToMod = False  # 모든구문을 통과하여 수정 직전에 True
 
-                    if foundTodo == True: #일치하는 할일 발견
-                        c1 ="" # 할 일
-                        c2 ="" # 구성요소 지칭어 (ex 요일, 태그, 시작시각..)
-                        c3 ="" # 수정할 내용
+                    if foundTodo == True:  # 일치하는 할일 발견
+                        c1 = ""  # 할 일
+                        c2 = ""  # 구성요소 지칭어 (ex 요일, 태그, 시작시각..)
+                        c3 = ""  # 수정할 내용
                         c1 = toModify[toModify.find(" "):toModify.find("-")-1]
                         c1 = c1.strip()
-                        
-                        c2 = toModify[toModify.find("-"):toModify.find(" ",toModify.find("-"))]
+
+                        c2 = toModify[toModify.find(
+                            "-"):toModify.find(" ", toModify.find("-"))]
                         c2 = c2.strip()
-                        
-                        c3 = toModify[toModify.find(" ",toModify.find("-")):]
+
+                        c3 = toModify[toModify.find(" ", toModify.find("-")):]
                         c3 = c3.strip()
-                        
+
                         if c2 == "-요일":
                             cIndex = 6
-                            if todoList[transIndex][cIndex] == None: #수정대상이 None값인 경우
-                                infoText = '오류: 해당하는 구성요소 지칭어가 없습니다.' 
+                            if todoList[transIndex][cIndex] == None:  # 수정대상이 None값인 경우
+                                infoText = '오류: 해당하는 구성요소 지칭어가 없습니다.'
 
-                            elif c3[0] == "{" and c3[len(c3)-1] =="}":
+                            elif c3[0] == "{" and c3[len(c3)-1] == "}":
 
-                                afterModList = [] #리스트의 경우에는 afterModList 나머지는 afterMod /최종변경될 값을 여기에 저장
+                                afterModList = []  # 리스트의 경우에는 afterModList 나머지는 afterMod /최종변경될 값을 여기에 저장
                                 index = 0
-                                for i in c3.split(" "):    #시간 데이터 분류 '요일'
-                                    i = i.replace("}", "").replace("{", "").replace("-", "")
-                                    if ("월요일" == i or "월" == i) :
+                                for i in c3.split(" "):  # 시간 데이터 분류 '요일'
+                                    i = i.replace("}", "").replace(
+                                        "{", "").replace("-", "")
+                                    if ("월요일" == i or "월" == i):
                                         afterModList.append(i)
-                                    elif ("화요일" == i or "화" == i) :
+                                    elif ("화요일" == i or "화" == i):
                                         afterModList.append(i)
-                                    elif ("수요일" == i or "수" == i) :
+                                    elif ("수요일" == i or "수" == i):
                                         afterModList.append(i)
-                                    elif ("목요일" == i or "목" == i) :
+                                    elif ("목요일" == i or "목" == i):
                                         afterModList.append(i)
-                                    elif ("금요일" == i or "금" == i) :
+                                    elif ("금요일" == i or "금" == i):
                                         afterModList.append(i)
-                                    elif ("토요일" == i or "토" == i) :
+                                    elif ("토요일" == i or "토" == i):
                                         afterModList.append(i)
-                                    elif ("일요일" == i or "일" == i) :
+                                    elif ("일요일" == i or "일" == i):
                                         afterModList.append(i)
-                    
+
                                     index += 1
-                                
-                            #temptList = todoList[transIndex]    
+
+                            #temptList = todoList[transIndex]
                             else:
                                 infoText = '오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
 
-                            if rToMod ==True:
-                                todoList[transIndex][cIndex] = afterModList# 본 시간표에 수정
+                            if rToMod == True:
+                                # 본 시간표에 수정
+                                todoList[transIndex][cIndex] = afterModList
 
                         elif c2 == "-시작시각":
                             cIndex = 2
-                            minIndex =3
-                            if todoList[transIndex][cIndex] == None: #수정대상이 None값인 경우
-                                infoText = '오류: 해당하는 구성요소 지칭어가 없습니다.' 
+                            minIndex = 3
+                            if todoList[transIndex][cIndex] == None:  # 수정대상이 None값인 경우
+                                infoText = '오류: 해당하는 구성요소 지칭어가 없습니다.'
 
-                            if c3[0] == "{" and c3[len(c3)-1] =="}":
+                            if c3[0] == "{" and c3[len(c3)-1] == "}":
                                 if c3.find("분") > 0:
-                                    minIndex =5
+                                    minIndex = 5
 
-                                afterModList =[]
+                                afterModList = []
                                 c3 = c3.replace("}", "")
                                 c3 = c3.replace("{", "")
                                 c3 = c3.replace(" ", "")
@@ -1061,20 +1181,21 @@ class App(QWidget):
                             else:
                                 infoText = '오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
 
-                            if rToMod ==True:
-                                todoList[transIndex][cIndex] = afterModList[0] # 본 시간표에 수정
+                            if rToMod == True:
+                                # 본 시간표에 수정
+                                todoList[transIndex][cIndex] = afterModList[0]
                                 todoList[transIndex][minIndex] = afterModList[1]
 
                         elif c2 == "-지속시간":
                             cIndex = 4
-                            if todoList[transIndex][cIndex] == None: #수정대상이 None값인 경우
-                                infoText = '오류: 해당하는 구성요소 지칭어가 없습니다.' 
+                            if todoList[transIndex][cIndex] == None:  # 수정대상이 None값인 경우
+                                infoText = '오류: 해당하는 구성요소 지칭어가 없습니다.'
 
-                            if c3[0] == "{" and c3[len(c3)-1] =="}":
+                            if c3[0] == "{" and c3[len(c3)-1] == "}":
                                 if c3.find("m") > 0:
-                                    minIndex =5
+                                    minIndex = 5
 
-                                afterModList =[]
+                                afterModList = []
                                 c3 = c3.replace("}", "")
                                 c3 = c3.replace("{", "")
                                 c3 = c3.replace(" ", "")
@@ -1085,51 +1206,50 @@ class App(QWidget):
                             else:
                                 infoText = '오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
 
-                            if rToMod ==True:
-                                todoList[transIndex][cIndex] = afterModList[0] # 본 시간표에 수정
+                            if rToMod == True:
+                                # 본 시간표에 수정
+                                todoList[transIndex][cIndex] = afterModList[0]
                                 todoList[transIndex][minIndex] = afterModList[1]
-                            
 
                         elif c2 == "-필수태그":
                             cIndex = 1
-                            if todoList[transIndex][cIndex] == None: #수정대상이 None값인 경우
-                                infoText = '오류: 해당하는 구성요소 지칭어가 없습니다.' 
+                            if todoList[transIndex][cIndex] == None:  # 수정대상이 None값인 경우
+                                infoText = '오류: 해당하는 구성요소 지칭어가 없습니다.'
                             if c3[0] == "#":
                                 afterMod = None
-                                c3 = c3.replace("#","")
-                                c3 = c3.replace(" ","")
+                                c3 = c3.replace("#", "")
+                                c3 = c3.replace(" ", "")
                                 if c3 == "강의":
-                                    afterMod = 0  
-                                    rToMod = True                          
+                                    afterMod = 0
+                                    rToMod = True
                                 elif c3 == "과제":
                                     afterMod = 1
                                     rToMod = True
                                 elif c3 == "일과":
                                     afterMod = 2
                                     rToMod = True
-                                
-                            if rToMod ==True:
-                                todoList[transIndex][cIndex] = afterMod # 본 시간표에 수정
 
+                            if rToMod == True:
+                                # 본 시간표에 수정
+                                todoList[transIndex][cIndex] = afterMod
 
                             else:
                                 infoText = '오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
-                                
-                             
 
                         elif c2 == "-서브태그":
                             cIndex = 7
-                            if todoList[transIndex][cIndex] == None: #수정대상이 None값인 경우
+                            if todoList[transIndex][cIndex] == None:  # 수정대상이 None값인 경우
                                 infoText = '오류: 해당하는 구성요소 지칭어가 없습니다.'
-                            if c3[0] == "-":                            
-                                afterMod = c3.replace("-","")
+                            if c3[0] == "-":
+                                afterMod = c3.replace("-", "")
                                 rToMod = True
 
                             else:
                                 infoText = '오류: 구성요소 지칭어를 입력해주세요.'
-                            
-                        if rToMod ==True:
-                            todoList[transIndex][cIndex] = afterMod # 본 시간표에 수정
+
+                        if rToMod == True:
+                            # 본 시간표에 수정
+                            todoList[transIndex][cIndex] = afterMod
 
                     elif(foundTodo == False):
                         infoText = '오류: 내용이 일치하는 할 일이 없습니다.'
@@ -1141,16 +1261,16 @@ class App(QWidget):
                 self.setText(NOW_TODO)
                 self.addError(infoText)
 
-
             # ========== 삭제 ===========
             elif oplist[0] == '/삭제':
                 self.resetLine()
-                    
+
                 if len(todoList) == 0:
                     infoText = '\n\n오류: 추가한 할 일이 없습니다.'
 
                 elif len(oplist) == 1:
-                    reply = QMessageBox.question(self, '경고', '할 일을 전부 삭제하시겠습니까?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                    reply = QMessageBox.question(
+                        self, '경고', '할 일을 전부 삭제하시겠습니까?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                     deleteFlag = (reply == QMessageBox.Yes)
                     if deleteFlag:
                         todoList = list()
@@ -1187,35 +1307,36 @@ class App(QWidget):
                 self.setText(NOW_TODO)
                 self.addError(infoText)
 
-
             # ========== 검색 ===========
             elif oplist[0] == '/검색':
                 self.resetLine()
                 searchedList = list()
 
-                tmpStr = ''.join(oplist)[3:] # '/검색'을 제외하고 공백을 없앤 후 합친 문자열
-                if tmpStr == '': # /검색만 치고 내용을 입력 안 한 케이스
+                tmpStr = ''.join(oplist)[3:]  # '/검색'을 제외하고 공백을 없앤 후 합친 문자열
+                if tmpStr == '':  # /검색만 치고 내용을 입력 안 한 케이스
                     self.setText(NOW_TODO)
                     self.addError('오류: 검색할 내용을 1자 이상 입력하세요.')
                     return
                 else:
-                    tmpList = tmpStr.split('-') # 리스트에 원소가 2개인지 체크해서 2개가 아니면 에러(하이픈이 2개 이상 들어온거)
+                    # 리스트에 원소가 2개인지 체크해서 2개가 아니면 에러(하이픈이 2개 이상 들어온거)
+                    tmpList = tmpStr.split('-')
                     if len(tmpList) > 1:               # '-'뒤에 정수를 입력한 경우
                         searchNum = int(tmpList[1])
                     else:                              # '-' + 정수를 입력하지 않은 경우
                         searchNum = 1
-                    
+
                     searchString = compressWord(tmpList[0])
 
                     for todo in todoList:
                         count = 0
-                        cmpString = compressWord(todo[0]) # 공백과 겹치는 문자를 제거한 '할 일' 문자열
+                        # 공백과 겹치는 문자를 제거한 '할 일' 문자열
+                        cmpString = compressWord(todo[0])
 
                         for cs in cmpString:
                             for ss in searchString:  # 한 글자씩 비교해서 searchNum까지 count 증가시키기
-                                if ss==cs:
+                                if ss == cs:
                                     count += 1
-                        
+
                         if count >= searchNum:       # 겹치는 글자가 기준을 충족한 경우
                             searchedList.append(todo)
 
@@ -1227,7 +1348,6 @@ class App(QWidget):
                         WriteOnTodoTable(searchedList)
                         self.setText('검색 결과 : \n\n' + NOW_TODO)
 
-
             # ========== 예외 ===========
             else:
                 completeTable()
@@ -1237,13 +1357,13 @@ class App(QWidget):
         self.resetLine()
         oplist = None
 
-
     # ========== 명령문 입력줄 초기화 ===========
+
     def resetLine(self):
         self.opline.clear()
 
-
     # ========== 메뉴 출력 함수 ===========
+
     def printMenu():
         self.setText(TEXT_MENU)
 
@@ -1286,8 +1406,10 @@ def compressWord(i):
 """
 
 # ========== 메인 ===========
+
+
 def main():
-# package check - tensorflow
+    # package check - tensorflow
     """try:
         import tensorflow as tf
         print('tensorflow installed')
@@ -1314,7 +1436,7 @@ def main():
 
     # Font
     fontDB = QFontDatabase()
-    fontDB.addApplicationFont('./D2Coding.ttf')
+    fontDB.addApplicationFont('C:\Windows\Fonts\D2Coding.ttf')
     _.setFont(QFont('D2Coding'))
 
     # exit
@@ -1323,5 +1445,5 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
+
 # EOF
