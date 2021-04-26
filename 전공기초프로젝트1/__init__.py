@@ -959,15 +959,16 @@ class App(QWidget):
             elif oplist[0] == '/수정': 
                 self.resetLine()
                 transIndex = 0 #수정하고자 하는 할일의 todoList[] 인덱스 값
-                
-                if len(oplist) == 1:
-                    infoText = '오류:'
-                    return
+                infoText = ''
+
                 if len(todoList) == 0:
-                    infoText = '\n\n오류: 수정할 할 일의 내용을 입력해주세요.'
+                    infoText = '오류: 할 일이 없습니다.'
+
+                elif len(oplist) == 1:
+                    infoText = '오류: 수정할 할 일의 내용을 입력해주세요.'
 
                 elif GetFixedLen(oplist[1]) > 10:
-                    infoText = '\n\n오류: 검색어의 고정폭 길이는 10을 초과할 수 없습니다.'
+                    infoText = '오류: 검색어의 고정폭 길이는 10을 초과할 수 없습니다.'
 
                 else: 
                     toModify = ''
@@ -977,7 +978,7 @@ class App(QWidget):
                     foundTodo = False #첫번째 인덱스의 내용(할일) 일치여부 확인
                     i = 0
                     while(i < len(todoList)):
-                        if(todoList[i][0] == toModify): 
+                        if(todoList[i][0] == toModify.split(' ')[0]): 
                             transIndex = i
                             foundTodo = True
                             break
@@ -1007,7 +1008,7 @@ class App(QWidget):
                         if c2 == "-요일":
                             cIndex = 6
                             if todoList[transIndex][cIndex] == None: #수정대상이 None값인 경우
-                                infoText = '\n\n오류: 해당하는 구성요소 지칭어가 없습니다.' 
+                                infoText = '오류: 해당하는 구성요소 지칭어가 없습니다.' 
 
                             elif c3[0] == "{" and c3[len(c3)-1] =="}":
 
@@ -1034,7 +1035,7 @@ class App(QWidget):
                                 
                             #temptList = todoList[transIndex]    
                             else:
-                                infoText = '\n\n오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
+                                infoText = '오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
 
                             if rToMod ==True:
                                 todoList[transIndex][cIndex] = afterModList# 본 시간표에 수정
@@ -1043,7 +1044,7 @@ class App(QWidget):
                             cIndex = 2
                             minIndex =3
                             if todoList[transIndex][cIndex] == None: #수정대상이 None값인 경우
-                                infoText = '\n\n오류: 해당하는 구성요소 지칭어가 없습니다.' 
+                                infoText = '오류: 해당하는 구성요소 지칭어가 없습니다.' 
 
                             if c3[0] == "{" and c3[len(c3)-1] =="}":
                                 if c3.find("분") > 0:
@@ -1058,7 +1059,7 @@ class App(QWidget):
                                 afterModList = c3.split(" ")
 
                             else:
-                                infoText = '\n\n오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
+                                infoText = '오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
 
                             if rToMod ==True:
                                 todoList[transIndex][cIndex] = afterModList[0] # 본 시간표에 수정
@@ -1067,7 +1068,7 @@ class App(QWidget):
                         elif c2 == "-지속시간":
                             cIndex = 4
                             if todoList[transIndex][cIndex] == None: #수정대상이 None값인 경우
-                                infoText = '\n\n오류: 해당하는 구성요소 지칭어가 없습니다.' 
+                                infoText = '오류: 해당하는 구성요소 지칭어가 없습니다.' 
 
                             if c3[0] == "{" and c3[len(c3)-1] =="}":
                                 if c3.find("m") > 0:
@@ -1082,7 +1083,7 @@ class App(QWidget):
                                 afterModList = c3.split(" ")
 
                             else:
-                                infoText = '\n\n오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
+                                infoText = '오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
 
                             if rToMod ==True:
                                 todoList[transIndex][cIndex] = afterModList[0] # 본 시간표에 수정
@@ -1092,7 +1093,7 @@ class App(QWidget):
                         elif c2 == "-필수태그":
                             cIndex = 1
                             if todoList[transIndex][cIndex] == None: #수정대상이 None값인 경우
-                                infoText = '\n\n오류: 해당하는 구성요소 지칭어가 없습니다.' 
+                                infoText = '오류: 해당하는 구성요소 지칭어가 없습니다.' 
                             if c3[0] == "#":
                                 afterMod = None
                                 c3 = c3.replace("#","")
@@ -1112,34 +1113,33 @@ class App(QWidget):
 
 
                             else:
-                                infoText = '\n\n오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
+                                infoText = '오류: 구성요소 지칭어에 알맞은 접두, 접미어가 아닙니다.'
                                 
                              
 
                         elif c2 == "-서브태그":
                             cIndex = 7
                             if todoList[transIndex][cIndex] == None: #수정대상이 None값인 경우
-                                infoText = '\n\n오류: 해당하는 구성요소 지칭어가 없습니다.'
+                                infoText = '오류: 해당하는 구성요소 지칭어가 없습니다.'
                             if c3[0] == "-":                            
                                 afterMod = c3.replace("-","")
                                 rToMod = True
 
                             else:
-                                infoText = '\n\n오류: 구성요소 지칭어를 입력해주세요'
+                                infoText = '오류: 구성요소 지칭어를 입력해주세요.'
                             
                         if rToMod ==True:
                             todoList[transIndex][cIndex] = afterMod # 본 시간표에 수정
 
-
                     elif(foundTodo == False):
-                        infoText = '\n\n오류: 내용이 일치하는 할 일이 없습니다.'
+                        infoText = '오류: 내용이 일치하는 할 일이 없습니다.'
 
                 #todoList[transIndex]
                 #맨 마지막에 수정된 구문이 문법 최종검사
                 user_save_check = True
                 WriteOnTodoTable(todoList)
-                self.addError(infoText)
                 self.setText(NOW_TODO)
+                self.addError(infoText)
 
 
             # ========== 삭제 ===========
