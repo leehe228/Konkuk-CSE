@@ -1388,42 +1388,43 @@ def compressWord(i):
 
 
 # ========== 패키지 설치 점검 및 설치 (미사용) ===========
-"""def pip_install(package):
-    installed = False
-    try:
-        subprocess.check_call(["pip", "install", package])
-        installed = True
-    except Exception as e:
-        print(e)
-        installed = False
+# def pip_install(package):
+#     installed = False
+#     try:
+#         subprocess.check_call(["pip", "install", package])
+#         installed = True
+#     except Exception as e:
+#         print(e)
+#         installed = False
 
-    if not installed:
-        try:
-            subprocess.check_call(["pip3", "install", package])
-        except Exception as e:
-            installed = False
-            print(e)
-"""
+#     if not installed:
+#         try:
+#             subprocess.check_call(["pip3", "install", package])
+#         except Exception as e:
+#             installed = False
+#             print(e)
+#             exit(0)
+
 
 # ========== 메인 ===========
 
 
 def main():
     # package check - tensorflow
-    """try:
-        import tensorflow as tf
-        print('tensorflow installed')
-    except Exception as e:
-        print(e)
-        pip_install('tensorflow==1.15.*')
+    # try:
+    #     import tensorflow as tf
+    #     print('tensorflow installed')
+    # except Exception as e:
+    #     print(e)
+    #     pip_install('tensorflow==1.15.*')
 
-    # package check - PyQt5
-    try:
-        import PyQt5
-        print('PyQt5 installed')
-    except Exception as e:
-        print(e)
-        pip_install('PyQt5')"""
+    # # package check - PyQt5
+    # try:
+    #     import PyQt5
+    #     print('PyQt5 installed')
+    # except Exception as e:
+    #     print(e)
+    #     pip_install('PyQt5')
 
     # App Instance
     _ = QApplication(sys.argv)
