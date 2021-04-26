@@ -679,13 +679,243 @@ class App(QWidget):
 
             # ========== 추가 ===========
             elif oplist[0] == '/추가':
-                self.resetLine()
-                if len(oplist) == 9:
-                    todoList.append([oplist[1], int(oplist[2]), int(oplist[3]), int(oplist[4]), int(oplist[5]), int(oplist[6]), [oplist[7]], oplist[8]])
+                index = 0
+                inputList = []
+                timeList = []
+                checker = True  #오류 존재여부 확인
 
-                user_save_check = True
-                WriteOnTodoTable(todoList)
-                self.setText(NOW_TODO)
+                index = 0
+                for i in oplist:    #할 일 내용 하나로 묶어주기
+                    todo = ""   #할 일
+                    if ('#' in i) or ('{' in i) :
+                        for k in range(1, index):
+                            todo += oplist[k] + " "
+
+                        for k in range(1, index):   #oplist에서 할 일 data 삭제
+                            del oplist[1]
+                        break
+
+                    index += 1
+                inputList.append(todo.strip())
+
+                index = 0
+                for i in oplist:    #필수 태그 추출
+                    if '#' in i:
+                        tagList = ['#강의', '#과제', '#일과']
+                        if i not in tagList:
+                            infoText = "오류: 필수태그가 #강의, #과제, #일과 중 하나가 아닙니다."
+                            self.addError(infoText)
+                            checker = False
+                            return
+                        else:
+                            inputList.append(tagList.index(i))
+                        del oplist[index]   #oplist에서 필수 태그 data 삭제
+                        break
+                    elif (not('#' in ' '.join(oplist))):
+                        inputList.append(None)
+                        break
+                    index += 1
+                
+
+                index = 0
+                openIndex = 0
+                closeIndex = 0
+                for i in oplist:    #{시간 데이터}를 timeList에 따로 분리
+                    if ('{' in i) :
+                        openIndex = index
+                    if ('}' in i):
+                        closeIndex = index
+                    index += 1
+                
+                if (openIndex != closeIndex or (openIndex != 0 and closeIndex != 0 and len(oplist[openIndex]) > 2)) and (openIndex != 0 and closeIndex != 0):
+                    for k in range(openIndex, closeIndex + 1):
+                        timeList.append(oplist[k].replace("{", "").replace("}", ""))
+
+                    for k in range(openIndex, closeIndex + 1):   #oplist에서 {시간 데이터} data 삭제
+                        del oplist[openIndex]
+                    
+                    if timeList:
+                        index = 0
+                        if not timeList:
+                            inputList.append(None)
+                        else:
+                            for i in timeList:    #시간 데이터 분류 '시'
+                                if '분' in i or '반' in i:
+                                    self.addError("오류: '시작시간(분)' 정보가 '시작시간(시)' 정보보다 앞에 있거나 띄어쓰기 없이 붙어 있습니다.")
+                                    checker = False
+                                    del timeList[index]
+                                    inputList.append(None)
+                                    break
+                                if i.replace('시', '').replace("시간", "") == "":
+                                    inputList.append(None)
+                                    break
+                                if ('시' in i) and i.replace('시', '').replace("시간", "") != "":
+                                    inputList.append(int(i.replace('시', '').replace("시간", "")))
+                                    del timeList[index]
+                                    break
+                                elif (not('시' in ' '.join(timeList))):
+                                    inputList.append(None)
+                                    break
+
+                                index += 1
+
+                        
+                        
+                        index = 0
+                        if not timeList:
+                            inputList.append(None)
+                        else:
+                            for i in timeList:    #시간 데이터 분류 '분'
+                                if i.replace("분", "") == "":
+                                    inputList.append(None)
+                                    break
+                                if ('분' in i) and i.replace("분", "") != "" :
+                                    inputList.append(int(i.replace("분", "")))
+                                    del timeList[index]
+                                    break
+                                if ('반' in i):
+                                    inputList.append(30)
+                                    del timeList[index]
+                                    break
+                                elif (not('분' in ' '.join(timeList)) and not('반' in ' '.join(timeList))):
+                                    inputList.append(None)
+                                    break
+
+                                index += 1
+                        
+                        index = 0
+                        if not timeList:
+                            inputList.append(None)
+                        else:
+                            for i in timeList:    #시간 데이터 분류 'h'
+                                if 'm' in i:
+                                    self.addError("오류: '지속시간(m)' 정보가 '지속시간(h)' 정보보다 앞에 있거나 띄어쓰기 없이 붙어 있습니다.")
+                                    checker = False
+                                    del timeList[index]
+                                    inputList.append(None)
+                                    break
+                                if i.replace("h", "") == "":
+                                    inputList.append(None)
+                                    break
+                                if ('h' in i) and i.replace("h", "") != "":
+                                    inputList.append(int(i.replace("h", "")))
+                                    del timeList[index]
+                                    break
+                                elif (not('h' in ' '.join(timeList))):
+                                    inputList.append(None)
+                                    break
+
+                                index += 1
+                        
+                        
+                        index = 0
+                        if not timeList:
+                            inputList.append(None)
+                        else:
+                            for i in timeList:    #시간 데이터 분류 'm'
+                                if i.replace("m", "") == "":
+                                    inputList.append(None)
+                                    break
+                                if ('m' in i) and i.replace("m", "") != "":
+                                    inputList.append(int(i.replace("m", "")))
+                                    del timeList[index]
+                                    break
+                                elif (not('m' in ' '.join(timeList))):
+                                    inputList.append(None)
+                                    break
+                                
+                                index += 1
+                        
+                        index = 0
+                        if not timeList:
+                            inputList.append(None)
+                        else:
+                            weekList = []
+                            for i in timeList:    #시간 데이터 분류 '요일'
+                                if ("월요일" == i or "월" == i) :
+                                    weekList.append("월")
+                                elif ("화요일" == i or "화" == i) :
+                                    weekList.append("화")
+                                elif ("수요일" == i or "수" == i) :
+                                    weekList.append("수")
+                                elif ("목요일" == i or "목" == i) :
+                                    weekList.append("목")
+                                elif ("금요일" == i or "금" == i) :
+                                    weekList.append("금")
+                                elif ("토요일" == i or "토" == i) :
+                                    weekList.append("토")
+                                elif ("일요일" == i or "일" == i) :
+                                    weekList.append("일")
+                                
+                                index += 1
+
+                            if weekList:
+                                inputList.append(weekList)
+                            else:
+                                inputList.append(None)
+                else:
+                    inputList.append(None)
+                    inputList.append(None)
+                    inputList.append(None)
+                    inputList.append(None)
+                    inputList.append(None)
+                    if openIndex != 0:
+                        del oplist[openIndex]
+
+
+                index = 0
+                start_index = 0
+                for i in oplist:    #서브 태그 추출
+                    if '-' in i:
+                        start_index = index
+                        sstr = ""   #서브 태그 합쳐서 저장
+                        for k in range(start_index, len(oplist)):
+                            sub_str = oplist[k].replace("-", "")
+                            sstr += sub_str
+                            if k != len(oplist) - 1:
+                                sstr += " "
+                        inputList.append(sstr)
+                        for k in range(start_index, len(oplist)):
+                            del oplist[index]
+                        break
+                    elif (not('-' in ' '.join(oplist))):
+                        inputList.append(None)
+                        break
+                    index += 1
+
+                
+                print(inputList)
+                #문법 규칙 확인
+                infoText = ""
+                
+                if inputList[0] != None and GetFixedLen(inputList[0]) > 10:
+                    infoText = "오류: 할일의 고정폭 길이가 10 초과!!! 현재 길이: " + str(GetFixedLen(inputList[0]))
+                    self.addError(infoText)
+                    checker = False
+                if inputList[7] != None and GetFixedLen(inputList[7]) > 24:
+                    infoText = "오류: 서브태그의 고정폭 길이가 24 초과!!! 현재 길이: " + str(GetFixedLen(inputList[7]))
+                    self.addError(infoText)
+                    checker = False
+                if inputList[1] == None:
+                    infoText = "오류: 필수태그 누락"
+                    self.addError(infoText)
+                    checker = False
+                if inputList[2] != None and (inputList[2] > 24 or inputList[2] < 1):
+                    infoText = "오류: 시작시간(시) 범위 초과!!! 1 이상 24 이하의 값을 입력해 주세요."
+                    self.addError(infoText)
+                    checker = False
+                if inputList[3] != None and (inputList[3] != 0 and inputList[3] != 30):
+                    infoText = "오류: 시작시간(분) 오류!!! 0 또는 30을 입력해 주세요."
+                    self.addError(infoText)
+                    checker = False
+
+
+                if checker:
+                    todoList.append(inputList)
+                    user_save_check = True
+                    WriteOnTodoTable(todoList)
+                    print(todoList)
+                    self.setText(NOW_TODO)
 
 
             # ========== 테스트 데이터 추가 ===========
