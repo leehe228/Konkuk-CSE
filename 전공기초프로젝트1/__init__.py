@@ -29,14 +29,7 @@ _________________________\n\
 \n\
 *시간표 명령어\n\
 \n\
-1. /이동 : 다음 목록의 페이지로 이동할 수 있다. 인자로 페이지 이름을 입력한다.\n\
-페이지 목록 : 1) 메뉴페이지 2) 생성페이지 3) 결과페이지\n\
-\n\
-2. /입력완료 : 할 일을 모두 입력한 후 시간표를 생성하기 위해 사용한다. 인자는 없다.\n\
-\n\
-3. /저장 : 시간표와 할 일 데이터를 파일로 저장한다. 인자는 없다.\n\
-\n\
-4. /불러오기 : 시간표 혹은 할 일 데이터 파일을 열어 내용을 확인한다. 인자는 없다.\n\
+/입력완료 : 할 일을 모두 입력한 후 시간표를 생성하기 위해 사용한다. 인자는 없다.\n\
 \n\
 _________________________\n\
 \n\
@@ -71,7 +64,7 @@ _________________________\n\
 \n\
 *기타 명령어\n\
 \n\
-1. /종료 : 프로그램을 안전하게 종료합니다. 인자는 없다.\n"
+1. // : 뒤로가기 명령어. 이전 페이지로 이동한다.\n"
 
 BAR = "──────────"
 SPC = "          "
@@ -85,7 +78,10 @@ TEXT_TODO_CENTER = "\
 │$T│$S│$R│$E│$W│$G│$D│"
 
 TEXT_TODO_BOTTOM = "\
-└──────────┴──────────┴──────────┴──────────┴─────────────────────┴──────────┴────────────────────────┘"
+└──────────┴──────────┴──────────┴──────────┴─────────────────────┴──────────┴────────────────────────┘\n\
+\n\
+* 빈 칸은 고정하지 않은 정보를 나타냅니다. \n\
+* 할 일을 모두 입력한 후 /생성 명령으로 시간표를 생성하세요."
 
 TEXT_TABLE = "\
 ┌──────────┬──────────┬──────────┬──────────┬──────────┬──────────┬──────────┬──────────┐\n\
@@ -138,6 +134,8 @@ TEXT_MENU = "\
 │                                     │      4. 종 료 하 기       │                                   │\n\
 │                                     │                           │                                   │\n\
 │                                     └───────────────────────────┘                                   │\n\
+│                                                                                                     │\n\
+│                            * 도움말을 읽으려면 /도움말 명령어를 입력하세요.                         │\n\
 │                                                                                                     │\n\
 └─────────────────────────────────────────────────────────────────────────────────────────────────────┘"
 
@@ -474,6 +472,9 @@ def AddTable(tasks):
             task[4] = randrange(1, 3)
             task[5] = choice([0, 30])
 
+        if (task[5] is None):
+            task[5] = 0
+
         # 지속 시간 이외 고정인 경우
         if (task[2] is None) or (task[6] is None):
             # 태그 -> One Hot Enc
@@ -643,8 +644,12 @@ class App(QWidget):
 
         # # ========== 메뉴 페이지 ===========
         if PAGE == 1:
+            # ========== 도움말 ===========
+            if oplist[0] == '/도움말':
+                self.resetLine()
+                self.setText(TEXT_HELP)
             # ========== 생성하기 ===========
-            if oplist[0] == '1':
+            elif oplist[0] == '1':
                 self.resetLine()
                 PAGE = 2
                 self.opline.setPlaceholderText("명령어 : ")
@@ -783,6 +788,13 @@ class App(QWidget):
             elif oplist[0] == '4':
                 self.resetLine()
 
+                if user_save_check:
+                    reply = QMessageBox.question(self, '종료', '저장되지 않은 변경 사항은 삭제됩니다. 종료하시겠습니까?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                    if reply == QMessageBox.Yes:
+                        exit(0)
+                else:
+                    exit(0)
+
             else:
                 self.resetLine()
                 self.setText(TEXT_MENU)
@@ -846,8 +858,8 @@ class App(QWidget):
 
                 if (openIndex != closeIndex or (openIndex != 0 and closeIndex != 0 and len(oplist[openIndex]) > 2)) and (openIndex != 0 and closeIndex != 0):
                     for k in range(openIndex, closeIndex + 1):
-                        timeList.append(oplist[k].replace(
-                            "{", "").replace("}", ""))
+                        if oplist[k].replace("{", "").replace("}", "") != '':
+                            timeList.append(oplist[k].replace("{", "").replace("}", ""))
 
                     # oplist에서 {시간 데이터} data 삭제
                     for k in range(openIndex, closeIndex + 1):
@@ -1372,7 +1384,7 @@ class App(QWidget):
 def GetFixedLen(s):
     l = 0
     for _ in s:
-        if (_ == ' ' or _ == ','):
+        if (_ == ' ' or _ == ',' or _ == '.' or _ == '!' or _ == '?'):
             l += 1
         elif (_.encode().isalnum()):
             l += 1
