@@ -1,0 +1,16 @@
+﻿  game.c
+C:\Users\hoeun\source\repos\PA2\PA2\game.c(603,25): warning C4553: '==': 식의 결과가 사용되지 않습니다. '='을(를) 의도했습니까?
+C:\Users\hoeun\source\repos\PA2\PA2\game.c(772,16): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+C:\Users\hoeun\source\repos\PA2\PA2\game.c(779,16): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+C:\Users\hoeun\source\repos\PA2\PA2\game.c(786,16): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+C:\Users\hoeun\source\repos\PA2\PA2\game.c(793,16): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+C:\Users\hoeun\source\repos\PA2\PA2\game.c(840,16): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+C:\Users\hoeun\source\repos\PA2\PA2\game.c(847,16): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+C:\Users\hoeun\source\repos\PA2\PA2\game.c(854,16): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+C:\Users\hoeun\source\repos\PA2\PA2\game.c(861,16): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+C:\Users\hoeun\source\repos\PA2\PA2\game.c(868,16): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+C:\Users\hoeun\source\repos\PA2\PA2\game.c(880,10): warning C4098: 'ending': 'void' 함수에서 값을 반환하고 있습니다.
+  main.c
+  코드를 생성하고 있습니다...
+C:\Users\hoeun\source\repos\PA2\PA2\game.c(632): warning C4715: 'trap': 모든 제어 경로에서 값을 반환하지는 않습니다.
+  PA2.vcxproj -> C:\Users\hoeun\source\repos\PA2\Debug\PA2.exe
