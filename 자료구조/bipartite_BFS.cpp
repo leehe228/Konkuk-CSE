@@ -142,10 +142,10 @@ int main(int argc, char* argv[]) {
 		S[i] = 0; // 링크 없음
 
 	for (i = 1; i <= m; i++) {
-		cin >> p >> q >> r; // r을 읽지 않고 1로 설정 (모든 weight를 1로 설정) -> BFS가 된다
+		cin >> p >> q; // r을 읽지 않고 1로 설정 (모든 weight를 1로 설정) -> BFS가 된다
 		S[p]++; 
 		Link[p][S[p]].first = q;
-		Link[p][S[p]].second = r;
+		Link[p][S[p]].second = 1; // weight를 전부 1로
 	}
 
 	for (i = 1; i <= n; i++) {
@@ -174,6 +174,7 @@ int main(int argc, char* argv[]) {
 			R[q] = 1; // red로
 			D[q] = r; // 거리 Distance r로
             // packet 중에 다른 색을 설정 -> 다른 색이면 끝
+			
 
 			// q에서 나가는 링크
 			for (i = 1; i <= S[q]; i++) {
