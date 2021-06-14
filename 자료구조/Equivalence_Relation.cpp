@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
 
     Stack stack;
 
-    int i, cur, newNode;
+    int i, cur, nextNode;
     for (i = 0; i < m; i++) {
         int x, y;
         cin >> x >> y;
@@ -109,12 +109,12 @@ int main(int argc, char* argv[]) {
             Lists::V[cur] = true; // 방문 체크
             cout << cur << '\t';
             while (true) {
-                if ((newNode = Lists::LinkedList[cur].Next()) != 0) {
+                if ((nextNode = Lists::LinkedList[cur].Next()) != 0) {
                     // 안가본 곳이면
-                    if (!Lists::V[newNode]) {
+                    if (!Lists::V[nextNode]) {
                         // 방문
                         stack.Push(cur);
-                        cur = newNode;
+                        cur = nextNode;
                         Lists::V[cur] = true;
                         cout << cur << '\t';
                     }
