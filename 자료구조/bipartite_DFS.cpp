@@ -58,7 +58,7 @@ int List::Next() {
 
 int main(int argc, char* argv[]) {
 
-    int myColor, nextColor, fail, changeMyColor;
+    int myColor, nextColor, fail = 0, changeMyColor;
 
     int n, m;
     cin >> n >> m;
